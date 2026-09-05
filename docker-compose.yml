@@ -1,4 +1,23 @@
 services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: finan-backend
+    working_dir: /workspace
+    command: sh ./docker/dev-entrypoint.sh
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-finan}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-finan}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-finan}
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    volumes:
+      - ./backend:/workspace
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   postgres:
     image: postgres:16-alpine
     container_name: finan-postgres
@@ -19,4 +38,3 @@ services:
 
 volumes:
   postgres_data:
-

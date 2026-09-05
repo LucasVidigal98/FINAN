@@ -49,34 +49,45 @@ O frontend será responsável pela experiência de uso e pelo dashboard. O backe
 
 ## Pré-requisitos
 
-- Node.js e npm
-- Angular CLI
-- Java 21
-- Maven ou Maven Wrapper
 - Docker e Docker Compose
+
+Java, Gradle, Node.js e demais ferramentas de desenvolvimento rodam em containers e não precisam ser instalados na máquina.
+
+## Backend
+
+O backend usa Java 21, Gradle e Spring Boot. Para construir a imagem e executar os testes iniciais:
+
+```bash
+docker compose build backend
+docker compose run --rm backend ./gradlew test
+```
+
+Para iniciar o backend e o PostgreSQL:
+
+```bash
+docker compose up backend
+```
+
+O diretório `backend/` é montado no container. Ao salvar uma alteração Java, o Gradle recompila as classes e o Spring Boot DevTools reinicia a aplicação automaticamente.
 
 ## Configuração local
 
 1. Copie `.env.example` para `.env` e ajuste os valores, se necessário.
-2. Suba o banco de dados:
+2. Suba os serviços:
 
    ```bash
-   docker compose up -d postgres
+   docker compose up
    ```
-
-3. Inicialize o frontend e o backend dentro de seus respectivos diretórios quando os projetos forem gerados.
 
 ## Próximos passos do MVP
 
 1. Gerar a aplicação Angular.
-2. Gerar a aplicação Spring Boot com Java 21.
-3. Configurar a conexão com PostgreSQL e as migrações.
-4. Modelar receitas, despesas e investimentos.
-5. Criar os endpoints de cadastro e consulta.
-6. Implementar o dashboard mensal.
-7. Adicionar testes e validações.
+2. Configurar as migrações e a persistência no PostgreSQL.
+3. Modelar receitas, despesas e investimentos.
+4. Criar os endpoints de cadastro e consulta.
+5. Implementar o dashboard mensal.
+6. Adicionar testes e validações.
 
 ## Integrações futuras
 
 Os modos Pluggy/Open Finance e híbrido serão definidos após a conclusão do fluxo manual. A integração bancária deverá ser isolada do domínio financeiro para permitir que lançamentos importados e lançamentos manuais coexistam sem duplicidade.
-
