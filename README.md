@@ -72,7 +72,7 @@ O diretório `backend/` é montado no container. Ao salvar uma alteração Java,
 
 ## Configuração local
 
-1. Copie `.env.example` para `.env` e ajuste os valores, se necessário.
+1. Copie `.env.example` para `.env` e preencha `POSTGRES_PASSWORD` com uma senha forte e exclusiva. O `.env` é ignorado pelo Git. O Compose exige uma senha não vazia e não fornece uma senha padrão.
 2. Suba os serviços:
 
    ```bash
