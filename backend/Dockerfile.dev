@@ -1,0 +1,16 @@
+FROM eclipse-temurin:21-jdk-alpine
+
+WORKDIR /workspace
+
+# Mantem as dependencias em cache enquanto os arquivos de build nao mudarem.
+COPY gradle gradle
+COPY gradlew build.gradle settings.gradle ./
+RUN chmod +x gradlew && ./gradlew dependencies --no-daemon
+
+COPY src src
+COPY docker docker
+RUN chmod +x docker/dev-entrypoint.sh
+
+EXPOSE 8080
+
+CMD ["sh", "./docker/dev-entrypoint.sh"]
