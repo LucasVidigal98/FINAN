@@ -7,7 +7,7 @@ services:
     working_dir: /workspace
     command: sh ./docker/dev-entrypoint.sh
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-finan}
+      SPRING_DATASOURCE_URL: ${DATABASE_URL:-jdbc:postgresql://postgres:5432/${POSTGRES_DB:-finan}}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-finan}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no .env ou no ambiente}
     ports:

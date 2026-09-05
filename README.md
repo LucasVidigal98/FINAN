@@ -76,13 +76,28 @@ O diretório `backend/` é montado no container. Ao salvar uma alteração Java,
 2. Suba os serviços:
 
    ```bash
-   docker compose up
+   docker compose up -d --build
    ```
+
+O Compose passa `DATABASE_URL`, `POSTGRES_USER` e `POSTGRES_PASSWORD` para as variáveis `SPRING_DATASOURCE_*` do backend. Dentro do Compose, a URL usa `postgres:5432`; `POSTGRES_PORT` controla somente a porta exposta na máquina. Para executar o Java fora do Docker, defina `SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/finan` (ajustando porta e banco), `SPRING_DATASOURCE_USERNAME` e `SPRING_DATASOURCE_PASSWORD` no ambiente. O Spring Boot não carrega `.env` automaticamente.
+
+O Flyway executa as migrations de `backend/src/main/resources/db/migration` durante a inicialização. A migration `V1__initial.sql` é intencionalmente vazia: registra a versão inicial sem criar tabelas de receitas ou despesas. O Hibernate apenas valida o schema (`ddl-auto: validate`).
+
+Para verificar a inicialização e o histórico:
+
+```bash
+docker compose logs backend
+docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT installed_rank, version, description, success FROM flyway_schema_history;"'
+```
+
+O log deve mostrar `Started FinanApplication` e o histórico deve conter a versão `1` com `success = true`. A API estará em `http://localhost:8080`; a raiz pode retornar 404 porque ainda não há endpoints.
+
+Os dados ficam no volume `postgres_data`. Alterar usuário, senha ou banco no `.env` não altera um banco já inicializado nesse volume.
 
 ## Próximos passos do MVP
 
 1. Gerar a aplicação Angular.
-2. Configurar as migrações e a persistência no PostgreSQL.
+2. Expandir as migrations conforme o domínio for implementado.
 3. Modelar receitas, despesas e investimentos.
 4. Criar os endpoints de cadastro e consulta.
 5. Implementar o dashboard mensal.
