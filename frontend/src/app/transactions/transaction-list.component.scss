@@ -1,0 +1,112 @@
+:host {
+  display: block;
+}
+
+.table-card {
+  overflow: hidden;
+  border: 1px solid #27272a;
+  border-radius: 1rem;
+  background: #18181c;
+  box-shadow: 0 1rem 2.5rem rgb(0 0 0 / 18%);
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  min-width: 52rem;
+  border-collapse: collapse;
+}
+
+thead {
+  background: #131317;
+}
+
+th,
+td {
+  padding: 1rem 1.25rem;
+  text-align: left;
+}
+
+th {
+  color: #a1a1aa;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+td {
+  border-top: 1px solid #27272a;
+  color: #d4d4d8;
+}
+
+tbody tr {
+  transition: background 150ms ease;
+
+  &:hover {
+    background: #1d1d24;
+  }
+}
+
+td:first-child {
+  color: #fff;
+  font-weight: 600;
+}
+
+th:nth-child(2),
+td:nth-child(2) {
+  text-align: right;
+}
+
+td:nth-child(2) {
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+td:nth-child(3) {
+  white-space: nowrap;
+}
+
+td:nth-child(4),
+td:last-child {
+  color: #a1a1aa;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+}
+
+.transaction-category {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.category-color {
+  flex: 0 0 auto;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 9999px;
+}
+
+.uncategorized {
+  color: #a1a1aa;
+}
+
+td[colspan] {
+  height: 10rem;
+  color: #a1a1aa;
+  font-weight: 400;
+  text-align: center;
+}
+
+@media (max-width: 48rem) {
+  th,
+  td {
+    padding: 0.85rem 1rem;
+  }
+}
