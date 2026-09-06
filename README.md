@@ -53,6 +53,29 @@ O frontend será responsável pela experiência de uso e pelo dashboard. O backe
 
 Java, Gradle, Node.js e demais ferramentas de desenvolvimento rodam em containers e não precisam ser instalados na máquina.
 
+## Frontend
+
+A primeira tela está em `http://localhost:4200/transactions`. Ela consulta
+`GET http://localhost:8080/api/transactions` e exibe descrição, valor em reais,
+data, tipo e origem. O backend permite esse GET com origem `http://localhost:4200`.
+
+Com o `.env` configurado conforme a seção de configuração local:
+
+```bash
+docker compose up -d --build
+```
+
+Para validar o Angular:
+
+```bash
+docker compose exec frontend npm run build
+docker compose exec frontend npm test -- --watch=false
+```
+
+Uma transação já cadastrada pelo backend deve aparecer ao abrir ou recarregar
+`/transactions`. Sem registros, a tela informa que nenhuma transação foi cadastrada.
+O formulário fica para uma próxima etapa.
+
 ## Backend
 
 O backend usa Java 21, Gradle e Spring Boot. Para construir a imagem e executar os testes iniciais:
@@ -100,7 +123,7 @@ Os dados ficam no volume `postgres_data`. Alterar usuário, senha ou banco no `.
 
 ## Próximos passos do MVP
 
-1. Gerar a aplicação Angular.
+1. Adicionar o formulário de cadastro no Angular.
 2. Expandir as migrations conforme o domínio for implementado.
 3. Modelar receitas, despesas e investimentos.
 4. Criar os endpoints de cadastro e consulta.

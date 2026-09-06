@@ -1,4 +1,14 @@
 services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "4200:4200"
+    volumes:
+      - ./frontend:/workspace
+      - frontend_node_modules:/workspace/node_modules
+
   backend:
     build:
       context: ./backend
@@ -37,4 +47,5 @@ services:
       retries: 5
 
 volumes:
+  frontend_node_modules:
   postgres_data:
