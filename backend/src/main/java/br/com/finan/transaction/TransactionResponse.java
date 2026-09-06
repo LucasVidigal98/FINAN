@@ -12,6 +12,7 @@ public record TransactionResponse(
         LocalDate occurredOn,
         TransactionType type,
         TransactionSource source,
+        CategorySummaryResponse category,
         Instant createdAt,
         Instant updatedAt
 ) {}
