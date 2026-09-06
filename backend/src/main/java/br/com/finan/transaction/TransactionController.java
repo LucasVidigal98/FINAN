@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/transactions")
+@CrossOrigin(origins = "http://localhost:4200")
 public class TransactionController {
 
     private final TransactionService service;
@@ -30,7 +31,6 @@ public class TransactionController {
     }
 
     @GetMapping
-    @CrossOrigin(origins = "http://localhost:4200")
     public List<TransactionResponse> list() {
         return service.list();
     }

@@ -1,0 +1,33 @@
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <label>
+    Descrição
+    <input type="text" formControlName="description" maxlength="150" />
+  </label>
+
+  <label>
+    Valor
+    <input type="number" formControlName="amount" min="0.01" step="0.01" />
+  </label>
+
+  <label>
+    Data
+    <input type="date" formControlName="occurredOn" />
+  </label>
+
+  <label>
+    Tipo
+    <select formControlName="type">
+      <option value="INCOME">Receita</option>
+      <option value="EXPENSE">Despesa</option>
+      <option value="INVESTMENT">Investimento</option>
+    </select>
+  </label>
+
+  <button type="submit" [disabled]="form.invalid || isSubmitting">
+    {{ isSubmitting ? 'Salvando…' : 'Adicionar transação' }}
+  </button>
+
+  @if (errorMessage) {
+    <p role="alert">{{ errorMessage }}</p>
+  }
+</form>
