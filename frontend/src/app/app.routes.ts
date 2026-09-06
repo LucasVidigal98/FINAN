@@ -14,4 +14,11 @@ export const routes: Routes = [
         (component) => component.TransactionListComponent,
       ),
   },
+  {
+    path: 'categories',
+    loadComponent: () =>
+      import('./categories/category-page.component').then(
+        (component) => component.CategoryPageComponent,
+      ),
+  },
 ];

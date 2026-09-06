@@ -43,6 +43,7 @@ public class CategoryService {
 
     private CategoryResponse toResponse(Category category) {
         return new CategoryResponse(category.getId(), category.getName(), category.getType(),
-                category.getColor(), category.isActive());
+                category.getColor(), category.isActive(), category.getCreatedAt(),
+                category.getUpdatedAt());
     }
 }

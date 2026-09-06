@@ -34,7 +34,9 @@ class CategoryControllerTests {
                 .andExpect(jsonPath("$.name").value("Alimentação"))
                 .andExpect(jsonPath("$.type").value("EXPENSE"))
                 .andExpect(jsonPath("$.color").value("#EF4444"))
-                .andExpect(jsonPath("$.active").value(true));
+                .andExpect(jsonPath("$.active").value(true))
+                .andExpect(jsonPath("$.createdAt").isNotEmpty())
+                .andExpect(jsonPath("$.updatedAt").isNotEmpty());
 
         assertThat(repository.count()).isOne();
     }

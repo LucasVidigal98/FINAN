@@ -1,5 +1,6 @@
 package br.com.finan.category;
 
+import java.time.Instant;
 import java.util.UUID;
 
 import br.com.finan.transaction.TransactionType;
@@ -9,5 +10,7 @@ public record CategoryResponse(
         String name,
         TransactionType type,
         String color,
-        boolean active
+        boolean active,
+        Instant createdAt,
+        Instant updatedAt
 ) {}
