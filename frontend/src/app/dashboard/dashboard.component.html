@@ -1,0 +1,70 @@
+<section class="heading">
+  <div>
+    <p class="eyebrow">Visão financeira</p>
+    <h1>Resumo mensal</h1>
+  </div>
+
+  <div class="period" aria-label="Período do resumo">
+    <label>
+      Mês
+      <select [(ngModel)]="selectedMonth" (ngModelChange)="loadSummary()">
+        @for (month of months; track $index) {
+          <option [ngValue]="$index + 1">{{ month }}</option>
+        }
+      </select>
+    </label>
+
+    <label>
+      Ano
+      <select [(ngModel)]="selectedYear" (ngModelChange)="loadSummary()">
+        @for (year of years; track year) {
+          <option [ngValue]="year">{{ year }}</option>
+        }
+      </select>
+    </label>
+  </div>
+</section>
+
+@if (isLoading()) {
+  <div class="state" role="status">Carregando resumo...</div>
+} @else if (errorMessage()) {
+  <div class="state error" role="alert">
+    <p>{{ errorMessage() }}</p>
+    <button type="button" (click)="loadSummary()">Tentar novamente</button>
+  </div>
+} @else if (summary()?.transactionCount === 0) {
+  <div class="state">
+    <h2>Nenhuma movimentação</h2>
+    <p>Este mês ainda não possui receitas, despesas ou investimentos.</p>
+  </div>
+} @else if (summary(); as summary) {
+  <section class="summary" aria-label="Resumo financeiro do mês">
+    <article class="card balance">
+      <p>Saldo disponível</p>
+      <strong>
+        {{ summary.availableBalance | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}
+      </strong>
+      <span>
+        {{ summary.transactionCount }}
+        {{ summary.transactionCount === 1 ? 'movimentação' : 'movimentações' }} neste mês
+      </span>
+    </article>
+
+    <div class="metrics">
+      <article class="card income">
+        <p>Receitas</p>
+        <strong>{{ summary.totalIncome | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
+      </article>
+      <article class="card expense">
+        <p>Despesas</p>
+        <strong>{{ summary.totalExpense | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
+      </article>
+      <article class="card investment">
+        <p>Investimentos</p>
+        <strong>
+          {{ summary.totalInvestment | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}
+        </strong>
+      </article>
+    </div>
+  </section>
+}
