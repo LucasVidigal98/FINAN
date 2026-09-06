@@ -22,6 +22,8 @@ The UI is available at `http://localhost:4200/transactions`; the API is at `http
 
 Use four spaces in Java and two spaces in TypeScript, HTML, SCSS, JSON, and YAML. Follow existing TypeScript formatting: single quotes and trailing commas. Prettier is installed in `frontend/`; check changes with `npx prettier --check "src/**/*.{ts,html,scss}"` from that directory.
 
+When creating or modifying frontend interfaces, always read and follow the design guide in `DESIGN.md`.
+
 Java classes use `PascalCase`, methods and fields use `camelCase`, and packages remain lowercase. Angular files use kebab-case suffixes such as `transaction.service.ts` and `transaction-list.component.ts`. Keep validation in the backend and use `BigDecimal` for money.
 
 ## Testing Guidelines
