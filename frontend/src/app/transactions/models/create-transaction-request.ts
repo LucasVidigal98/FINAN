@@ -5,4 +5,5 @@ export interface CreateTransactionRequest {
   amount: number;
   occurredOn: string;
   type: TransactionType;
+  categoryId: string | null;
 }

@@ -1,4 +1,12 @@
-<form [formGroup]="form" (ngSubmit)="submit()">
+<form [formGroup]="form" (ngSubmit)="submit()" aria-labelledby="transaction-form-title">
+  <div class="form-heading">
+    <div>
+      <p class="eyebrow">Nova movimentação</p>
+      <h2 id="transaction-form-title">Adicionar transação</h2>
+    </div>
+    <p>Registre receitas, despesas e investimentos.</p>
+  </div>
+
   <label>
     Descrição
     <input type="text" formControlName="description" maxlength="150" />
@@ -23,11 +31,29 @@
     </select>
   </label>
 
+  <label>
+    Categoria
+    <select formControlName="categoryId" [attr.disabled]="categoriesLoading() ? true : null">
+      <option [ngValue]="null">
+        {{ categoriesLoading() ? 'Carregando categorias...' : 'Sem categoria' }}
+      </option>
+      @for (category of filteredCategories(); track category.id) {
+        <option [value]="category.id">{{ category.name }}</option>
+      }
+    </select>
+  </label>
+
   <button type="submit" [disabled]="form.invalid || isSubmitting">
     {{ isSubmitting ? 'Salvando…' : 'Adicionar transação' }}
   </button>
 
   @if (errorMessage) {
     <p role="alert">{{ errorMessage }}</p>
+  }
+
+  @if (categoriesLoadError()) {
+    <p class="category-load-error" role="status">
+      As categorias não puderam ser carregadas. Você ainda pode salvar sem categoria.
+    </p>
   }
 </form>

@@ -1,0 +1,120 @@
+<section class="heading">
+  <div>
+    <p class="eyebrow">Organização financeira</p>
+    <h1>Categorias</h1>
+    <p class="intro">Crie categorias para identificar suas movimentações com clareza.</p>
+  </div>
+</section>
+
+<section class="layout">
+  <form class="card" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="form-heading">
+      <p class="eyebrow">Nova categoria</p>
+      <h2>Dados da categoria</h2>
+    </div>
+
+    <label for="category-name">Nome</label>
+    <input
+      id="category-name"
+      type="text"
+      formControlName="name"
+      maxlength="50"
+      autocomplete="off"
+      [attr.aria-invalid]="form.controls.name.invalid && form.controls.name.touched"
+      [attr.aria-describedby]="form.controls.name.invalid ? 'category-name-error' : null"
+    />
+    @if (form.controls.name.touched && form.controls.name.hasError('required')) {
+      <p id="category-name-error" class="field-error">Informe o nome da categoria.</p>
+    } @else if (form.controls.name.touched && form.controls.name.hasError('maxlength')) {
+      <p id="category-name-error" class="field-error">Use no máximo 50 caracteres.</p>
+    } @else if (form.controls.name.touched && form.controls.name.hasError('pattern')) {
+      <p id="category-name-error" class="field-error">Informe um nome válido.</p>
+    }
+
+    <label for="category-type">Tipo</label>
+    <select id="category-type" formControlName="type">
+      <option value="INCOME">Receita</option>
+      <option value="EXPENSE">Despesa</option>
+      <option value="INVESTMENT">Investimento</option>
+    </select>
+
+    <label for="category-color">Cor</label>
+    <div class="color-field">
+      <input
+        id="category-color"
+        type="color"
+        formControlName="color"
+        aria-describedby="category-color-value"
+      />
+      <span
+        class="color-preview"
+        [style.background]="form.controls.color.value"
+        aria-hidden="true"
+      ></span>
+      <span id="category-color-value">{{ form.controls.color.value }}</span>
+    </div>
+
+    <button type="submit" [disabled]="form.invalid || isSubmitting">
+      {{ isSubmitting ? 'Salvando…' : 'Adicionar categoria' }}
+    </button>
+
+    @if (errorMessage) {
+      <p class="submit-error" role="alert">{{ errorMessage }}</p>
+    }
+  </form>
+
+  <section class="list-card" aria-labelledby="category-list-title">
+    <div class="list-heading">
+      <div>
+        <p class="eyebrow">Cadastradas</p>
+        <h2 id="category-list-title">Suas categorias</h2>
+      </div>
+      <div class="filters" aria-label="Filtrar categorias">
+        @for (filter of filters; track filter.value) {
+          <button
+            type="button"
+            [class.active]="selectedFilter() === filter.value"
+            [attr.aria-pressed]="selectedFilter() === filter.value"
+            (click)="selectFilter(filter.value)"
+          >
+            {{ filter.label }}
+          </button>
+        }
+      </div>
+    </div>
+
+    @if (loading()) {
+      <div class="state" role="status">Carregando categorias...</div>
+    } @else if (loadError()) {
+      <div class="state error" role="alert">
+        <p>Não foi possível carregar as categorias.</p>
+        <button type="button" (click)="loadCategories()">Tentar novamente</button>
+      </div>
+    } @else {
+      <ul class="category-list">
+        @for (category of visibleCategories(); track category.id) {
+          <li>
+            <span
+              class="category-color"
+              [style.background]="category.color || '#818CF8'"
+              aria-hidden="true"
+            ></span>
+            <span class="category-name">{{ category.name }}</span>
+            <span class="type">{{ typeLabels[category.type] }}</span>
+            <span class="status" [class.inactive]="!category.active">
+              {{ category.active ? 'Ativa' : 'Inativa' }}
+            </span>
+          </li>
+        } @empty {
+          <li class="empty">
+            @if (categories().length) {
+              Nenhuma categoria neste filtro.
+            } @else {
+              Cadastre sua primeira categoria usando o formulário.
+            }
+          </li>
+        }
+      </ul>
+    }
+  </section>
+</section>

@@ -9,6 +9,7 @@ import { TransactionService } from './transaction.service';
   standalone: true,
   imports: [CurrencyPipe, DatePipe, TransactionFormComponent],
   templateUrl: './transaction-list.component.html',
+  styleUrl: './transaction-list.component.scss',
 })
 export class TransactionListComponent {
   private readonly transactionService = inject(TransactionService);
