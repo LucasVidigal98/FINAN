@@ -1,0 +1,2 @@
+-- Marco inicial do banco: o Flyway cria sua tabela de historico.
+-- As tabelas de dominio serao adicionadas em migrations futuras.

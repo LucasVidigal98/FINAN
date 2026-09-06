@@ -81,9 +81,9 @@ O diretório `backend/` é montado no container. Ao salvar uma alteração Java,
 
 O Compose passa `DATABASE_URL`, `POSTGRES_USER` e `POSTGRES_PASSWORD` para as variáveis `SPRING_DATASOURCE_*` do backend. Dentro do Compose, a URL usa `postgres:5432`; `POSTGRES_PORT` controla somente a porta exposta na máquina. Para executar o Java fora do Docker, defina `SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/finan` (ajustando porta e banco), `SPRING_DATASOURCE_USERNAME` e `SPRING_DATASOURCE_PASSWORD` no ambiente. O Spring Boot não carrega `.env` automaticamente.
 
-O Flyway executa as migrations de `backend/src/main/resources/db/migration` durante a inicialização. A migration `V1__create_financial_transactions.sql` cria a tabela unificada de transações financeiras, com constraints de campos obrigatórios, valor positivo e enums. A entidade usa `MANUAL` como origem inicial e preenche os timestamps automaticamente. O Hibernate apenas valida o schema (`ddl-auto: validate`).
+O Flyway executa as migrations de `backend/src/main/resources/db/migration` durante a inicialização. A migration `V2__create_financial_transactions.sql` cria a tabela unificada de transações financeiras, com constraints de campos obrigatórios, valor positivo e enums. A entidade usa `MANUAL` como origem inicial e preenche os timestamps automaticamente. O Hibernate apenas valida o schema (`ddl-auto: validate`).
 
-Esta V1 substitui o marcador vazio `V1__initial.sql` da fundação. Se esse marcador já foi aplicado, use um banco novo para esta etapa; o Flyway rejeitará o histórico anterior. Não execute `repair` isoladamente: ele não cria a tabela. Preserve o banco existente até definir uma estratégia de atualização.
+A migration `V1__initial.sql` preserva o marcador original da fundação. Bancos que já executaram essa V1 recebem a tabela pela V2 automaticamente; bancos novos executam ambas. Migrations já aplicadas devem ser preservadas, e mudanças de schema devem usar uma nova versão.
 
 Os testes de persistência usam PostgreSQL e executam as migrations com `ddl-auto: validate`. Configure `SPRING_DATASOURCE_URL` para um banco de testes separado e vazio ao executar `./gradlew test`; os testes de repositório fazem rollback dos lançamentos.
 
@@ -94,7 +94,7 @@ docker compose logs backend
 docker compose exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT installed_rank, version, description, success FROM flyway_schema_history;"'
 ```
 
-O log deve mostrar `Started FinanApplication` e o histórico deve conter a versão `1` com `success = true`. A API estará em `http://localhost:8080`; a raiz pode retornar 404 porque ainda não há endpoints.
+O log deve mostrar `Started FinanApplication` e o histórico deve conter as versões `1` e `2` com `success = true`. A API estará em `http://localhost:8080/api/transactions`, com os métodos POST e GET; a raiz pode retornar 404.
 
 Os dados ficam no volume `postgres_data`. Alterar usuário, senha ou banco no `.env` não altera um banco já inicializado nesse volume.
 
