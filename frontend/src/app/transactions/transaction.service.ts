@@ -17,4 +17,8 @@ export class TransactionService {
   create(request: CreateTransactionRequest): Observable<Transaction> {
     return this.http.post<Transaction>(this.apiUrl, request);
   }
+
+  updateCategory(transactionId: string, categoryId: string | null): Observable<Transaction> {
+    return this.http.patch<Transaction>(`${this.apiUrl}/${transactionId}/category`, { categoryId });
+  }
 }
