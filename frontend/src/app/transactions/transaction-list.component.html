@@ -28,18 +28,22 @@
               <td>{{ transaction.occurredOn | date: 'dd/MM/yyyy' }}</td>
               <td>{{ transaction.type }}</td>
               <td>
-                <span class="transaction-category">
-                  @if (transaction.category; as category) {
-                    <span
-                      class="category-color"
-                      [style.background]="category.color || '#818CF8'"
-                      aria-hidden="true"
-                    ></span>
-                    <span>{{ category.name }}</span>
-                  } @else {
-                    <span class="uncategorized">Sem categoria</span>
+                <select
+                  class="category-select"
+                  [disabled]="categoriesLoading() || savingCategoryIds().has(transaction.id)"
+                  [attr.aria-label]="'Categoria de ' + transaction.description"
+                  (change)="updateCategory(transaction, $any($event.target).value || null)"
+                >
+                  <option value="" [selected]="!transaction.category">Sem categoria</option>
+                  @for (category of filteredCategories(transaction); track category.id) {
+                    <option
+                      [value]="category.id"
+                      [selected]="transaction.category?.id === category.id"
+                    >
+                      {{ category.name }}
+                    </option>
                   }
-                </span>
+                </select>
               </td>
               <td>{{ transaction.source }}</td>
             </tr>
