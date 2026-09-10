@@ -40,7 +40,7 @@ class FinancialAccountControllerTests {
 
     @Test
     void createsManualAccount() throws Exception {
-        create("Nubank", "1500.00")
+        create("  Nubank  ", "1500.00")
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").isNotEmpty())
                 .andExpect(jsonPath("$.name").value("Nubank"))
@@ -48,10 +48,18 @@ class FinancialAccountControllerTests {
                 .andExpect(jsonPath("$.source").value("MANUAL"))
                 .andExpect(jsonPath("$.initialBalance").value(1500.00))
                 .andExpect(jsonPath("$.active").value(true))
+                .andExpect(jsonPath("$.providerBalance").value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(jsonPath("$.lastSyncedAt").value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(jsonPath("$.externalId").doesNotHaveJsonPath())
                 .andExpect(jsonPath("$.createdAt").isNotEmpty())
                 .andExpect(jsonPath("$.updatedAt").isNotEmpty());
 
         FinancialAccount account = repository.findAll().getFirst();
+        mvc.perform(get("/api/accounts"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(account.getId().toString()))
+                .andExpect(jsonPath("$[0].name").value("Nubank"));
+        assertThat(account.isActive()).isTrue();
         assertThat(account.getSource()).isEqualTo(TransactionSource.MANUAL);
         assertThat(account.getProviderBalance()).isNull();
         assertThat(account.getExternalId()).isNull();
@@ -67,17 +75,22 @@ class FinancialAccountControllerTests {
     }
 
     @Test
-    void listsAccountsByName() throws Exception {
+    void listsOnlyActiveAccountsByName() throws Exception {
+        insert("A inactive", "MANUAL", null, false);
+        insert("Z inactive", "PLUGGY", "inactive-provider", false);
+        insert("Banco", "PLUGGY", "private-provider-id", true);
         create("Nubank", "0").andExpect(status().isCreated());
         create("carteira", "0").andExpect(status().isCreated());
         create("Itau", "0").andExpect(status().isCreated());
 
         mvc.perform(get("/api/accounts"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(3))
-                .andExpect(jsonPath("$[0].name").value("carteira"))
-                .andExpect(jsonPath("$[1].name").value("Itau"))
-                .andExpect(jsonPath("$[2].name").value("Nubank"));
+                .andExpect(jsonPath("$.length()").value(4))
+                .andExpect(jsonPath("$[0].name").value("Banco"))
+                .andExpect(jsonPath("$[0].externalId").doesNotHaveJsonPath())
+                .andExpect(jsonPath("$[1].name").value("carteira"))
+                .andExpect(jsonPath("$[2].name").value("Itau"))
+                .andExpect(jsonPath("$[3].name").value("Nubank"));
     }
 
     @Test
@@ -118,26 +131,18 @@ class FinancialAccountControllerTests {
         assertThat(repository.count()).isEqualTo(2);
     }
 
-    @Test
-    void manualEndpointCannotSetProviderFieldsOrActiveFlag() throws Exception {
-        postJson("""
-                {"name":"Nubank","type":"CHECKING","initialBalance":10,
-                 "source":"PLUGGY","providerBalance":9000,"externalId":"injected",
-                 "lastSyncedAt":"2026-09-01T00:00:00Z","active":false}
-                """)
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.source").value("MANUAL"))
-                .andExpect(jsonPath("$.active").value(true))
-                .andExpect(jsonPath("$.providerBalance").isEmpty())
-                .andExpect(jsonPath("$.externalId").isEmpty())
-                .andExpect(jsonPath("$.lastSyncedAt").isEmpty());
-
-        FinancialAccount account = repository.findAll().getFirst();
-        assertThat(account.getSource()).isEqualTo(TransactionSource.MANUAL);
-        assertThat(account.getProviderBalance()).isNull();
-        assertThat(account.getExternalId()).isNull();
-        assertThat(account.getLastSyncedAt()).isNull();
-        assertThat(account.isActive()).isTrue();
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "\"source\":\"PLUGGY\"",
+            "\"providerBalance\":9000",
+            "\"externalId\":\"injected\"",
+            "\"lastSyncedAt\":\"2026-09-01T00:00:00Z\"",
+            "\"active\":false"
+    })
+    void manualEndpointRejectsProviderFieldsAndActiveFlag(String field) throws Exception {
+        postJson("{\"name\":\"Nubank\",\"type\":\"CHECKING\",\"initialBalance\":10," + field + "}")
+                .andExpect(status().isBadRequest());
+        assertThat(repository.count()).isZero();
     }
 
     @Test

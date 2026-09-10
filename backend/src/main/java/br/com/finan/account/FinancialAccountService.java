@@ -36,14 +36,14 @@ public class FinancialAccountService {
 
     @Transactional(readOnly = true)
     public List<FinancialAccountResponse> list() {
-        return repository.findAll(Sort.by(Sort.Order.asc("name").ignoreCase()))
+        return repository.findByActiveTrue(Sort.by(Sort.Order.asc("name").ignoreCase()))
                 .stream().map(this::toResponse).toList();
     }
 
     private FinancialAccountResponse toResponse(FinancialAccount account) {
         return new FinancialAccountResponse(account.getId(), account.getName(), account.getType(),
                 account.getSource(), account.getInitialBalance(), account.getProviderBalance(),
-                account.getExternalId(), account.isActive(), account.getLastSyncedAt(),
+                account.isActive(), account.getLastSyncedAt(),
                 account.getCreatedAt(), account.getUpdatedAt());
     }
 }

@@ -13,7 +13,6 @@ public record FinancialAccountResponse(
         TransactionSource source,
         BigDecimal initialBalance,
         BigDecimal providerBalance,
-        String externalId,
         boolean active,
         Instant lastSyncedAt,
         Instant createdAt,
