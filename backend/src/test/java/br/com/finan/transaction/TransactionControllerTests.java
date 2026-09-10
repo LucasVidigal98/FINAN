@@ -4,12 +4,16 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
+import br.com.finan.account.AccountType;
+import br.com.finan.account.FinancialAccount;
+import br.com.finan.account.FinancialAccountRepository;
 import br.com.finan.category.Category;
 import br.com.finan.category.CategoryRepository;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -39,6 +43,9 @@ class TransactionControllerTests {
     private CategoryRepository categoryRepository;
 
     @Autowired
+    private FinancialAccountRepository accountRepository;
+
+    @Autowired
     private EntityManager entityManager;
 
     @Test
@@ -57,6 +64,7 @@ class TransactionControllerTests {
                 .andExpect(jsonPath("$.type").value("EXPENSE"))
                 .andExpect(jsonPath("$.source").value("MANUAL"))
                 .andExpect(jsonPath("$.category").doesNotExist())
+                .andExpect(jsonPath("$.account").doesNotExist())
                 .andExpect(jsonPath("$.createdAt").isNotEmpty())
                 .andExpect(jsonPath("$.updatedAt").isNotEmpty());
 
@@ -64,6 +72,7 @@ class TransactionControllerTests {
         assertThat(repository.findAll()).singleElement().satisfies(transaction -> {
             assertThat(transaction.getAmount()).isEqualByComparingTo("123.45");
             assertThat(transaction.getSource()).isEqualTo(TransactionSource.MANUAL);
+            assertThat(transaction.getAccount()).isNull();
         });
     }
 
@@ -195,6 +204,137 @@ class TransactionControllerTests {
         mvc.perform(get("/api/transactions"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @ParameterizedTest
+    @EnumSource(TransactionSource.class)
+    void createsWithAccountAndListsSummaryWithoutChangingAccount(TransactionSource source) throws Exception {
+        FinancialAccount account = saveAccount("Nubank");
+        entityManager.createNativeQuery("""
+                UPDATE financial_accounts SET source = :source, provider_balance = 987.65,
+                external_id = 'external-account', last_synced_at = '2026-09-01T12:00:00Z'
+                WHERE id = :id
+                """).setParameter("source", source.name()).setParameter("id", account.getId())
+                .executeUpdate();
+        entityManager.clear();
+        Object[] before = accountSnapshot(account.getId());
+
+        postWithAccount(account.getId())
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.source").value("MANUAL"))
+                .andExpect(jsonPath("$.account.id").value(account.getId().toString()))
+                .andExpect(jsonPath("$.account.name").value("Nubank"))
+                .andExpect(jsonPath("$.account.type").value("CHECKING"))
+                .andExpect(jsonPath("$.account.source").value(source.name()));
+
+        entityManager.flush();
+        entityManager.clear();
+        assertThat(repository.findAll()).singleElement().satisfies(transaction ->
+                assertThat(transaction.getAccount().getId()).isEqualTo(account.getId()));
+        assertThat(accountSnapshot(account.getId())).containsExactly(before);
+        mvc.perform(get("/api/transactions"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].account.id").value(account.getId().toString()))
+                .andExpect(jsonPath("$[0].account.name").value("Nubank"))
+                .andExpect(jsonPath("$[0].account.type").value("CHECKING"))
+                .andExpect(jsonPath("$[0].account.source").value(source.name()));
+    }
+
+    @Test
+    void createsWithExplicitNullAccount() throws Exception {
+        postWithAccount(null).andExpect(status().isCreated())
+                .andExpect(jsonPath("$.account").doesNotExist());
+        entityManager.flush();
+        entityManager.clear();
+        assertThat(repository.findAll()).singleElement().satisfies(transaction ->
+                assertThat(transaction.getAccount()).isNull());
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void rejectsUnknownOrInactiveAccountOnCreateAndPatch(boolean inactive) throws Exception {
+        UUID accountId = UUID.randomUUID();
+        if (inactive) {
+            accountId = saveAccount("Inactive").getId();
+            entityManager.createNativeQuery("UPDATE financial_accounts SET active = false WHERE id = :id")
+                    .setParameter("id", accountId).executeUpdate();
+            entityManager.clear();
+        }
+        int expectedStatus = inactive ? 400 : 404;
+        postWithAccount(accountId).andExpect(status().is(expectedStatus));
+        assertThat(repository.count()).isZero();
+
+        FinancialAccount original = saveAccount("Original");
+        FinancialTransaction transaction = save("Mercado", LocalDate.of(2026, 9, 5));
+        transaction.setAccount(original);
+        entityManager.flush();
+        patchAccount(transaction.getId(), accountId).andExpect(status().is(expectedStatus));
+        entityManager.flush();
+        entityManager.clear();
+        assertThat(repository.findById(transaction.getId()).orElseThrow().getAccount().getId())
+                .isEqualTo(original.getId());
+    }
+
+    @ParameterizedTest
+    @EnumSource(TransactionSource.class)
+    void changesAndRemovesAccountWithoutChangingBalances(TransactionSource source) throws Exception {
+        FinancialAccount original = saveAccount("Original");
+        FinancialAccount replacement = saveAccount("Replacement");
+        FinancialTransaction transaction = save("Mercado", LocalDate.of(2026, 9, 5));
+        transaction.setSource(source);
+        transaction.setAccount(original);
+        entityManager.flush();
+        entityManager.clear();
+
+        Object[] originalBefore = accountSnapshot(original.getId());
+        Object[] replacementBefore = accountSnapshot(replacement.getId());
+        patchAccount(transaction.getId(), replacement.getId())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.source").value(source.name()))
+                .andExpect(jsonPath("$.account.id").value(replacement.getId().toString()));
+        entityManager.flush();
+        entityManager.clear();
+        assertThat(repository.findById(transaction.getId()).orElseThrow().getAccount().getId())
+                .isEqualTo(replacement.getId());
+
+        patchAccount(transaction.getId(), null).andExpect(status().isOk())
+                .andExpect(jsonPath("$.account").doesNotExist());
+        entityManager.flush();
+        entityManager.clear();
+        assertThat(repository.findById(transaction.getId()).orElseThrow().getAccount()).isNull();
+        assertThat(accountSnapshot(original.getId())).containsExactly(originalBefore);
+        assertThat(accountSnapshot(replacement.getId())).containsExactly(replacementBefore);
+    }
+
+    @Test
+    void rejectsAccountUpdateForUnknownTransaction() throws Exception {
+        patchAccount(UUID.randomUUID(), null).andExpect(status().isNotFound());
+    }
+
+    private Object[] accountSnapshot(UUID id) {
+        return (Object[]) entityManager.createNativeQuery("SELECT * FROM financial_accounts WHERE id = :id")
+                .setParameter("id", id).getSingleResult();
+    }
+
+    private FinancialAccount saveAccount(String name) {
+        return accountRepository.saveAndFlush(
+                new FinancialAccount(name, AccountType.CHECKING, new BigDecimal("100.00")));
+    }
+
+    private org.springframework.test.web.servlet.ResultActions postWithAccount(UUID accountId)
+            throws Exception {
+        return mvc.perform(post("/api/transactions").contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"description":"Mercado","amount":10.00,"occurredOn":"2026-09-05",
+                         "type":"EXPENSE","accountId":%s}
+                        """.formatted(accountId == null ? "null" : "\"" + accountId + "\"")));
+    }
+
+    private org.springframework.test.web.servlet.ResultActions patchAccount(UUID transactionId, UUID accountId)
+            throws Exception {
+        return mvc.perform(patch("/api/transactions/{id}/account", transactionId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"accountId\":%s}".formatted(accountId == null ? "null" : "\"" + accountId + "\"")));
     }
 
     private FinancialTransaction save(String description, LocalDate occurredOn) {

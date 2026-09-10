@@ -38,6 +38,12 @@ public class TransactionController {
         return service.list();
     }
 
+    @PatchMapping("/{transactionId}/account")
+    public TransactionResponse updateAccount(@PathVariable UUID transactionId,
+            @RequestBody UpdateTransactionAccountRequest request) {
+        return service.updateAccount(transactionId, request);
+    }
+
     @PatchMapping("/{transactionId}/category")
     public TransactionResponse updateCategory(@PathVariable UUID transactionId,
             @RequestBody UpdateTransactionCategoryRequest request) {

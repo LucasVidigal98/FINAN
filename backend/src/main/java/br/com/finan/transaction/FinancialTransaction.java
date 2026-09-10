@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 
+import br.com.finan.account.FinancialAccount;
 import br.com.finan.category.Category;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -60,6 +61,10 @@ public class FinancialTransaction {
     @JoinColumn(name = "category_id")
     private Category category;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "account_id")
+    private FinancialAccount account;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -96,6 +101,7 @@ public class FinancialTransaction {
     public TransactionType getType() { return type; }
     public TransactionSource getSource() { return source; }
     public Category getCategory() { return category; }
+    public FinancialAccount getAccount() { return account; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 
@@ -105,4 +111,5 @@ public class FinancialTransaction {
     public void setType(TransactionType type) { this.type = type; }
     public void setSource(TransactionSource source) { this.source = source; }
     public void setCategory(Category category) { this.category = category; }
+    public void setAccount(FinancialAccount account) { this.account = account; }
 }
