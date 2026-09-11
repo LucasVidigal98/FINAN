@@ -1,5 +1,11 @@
 export type AccountType = 'CHECKING' | 'SAVINGS' | 'CASH' | 'INVESTMENT';
 
+export interface CreateFinancialAccountRequest {
+  name: string;
+  type: AccountType;
+  initialBalance: number;
+}
+
 export interface FinancialAccount {
   id: string;
   name: string;

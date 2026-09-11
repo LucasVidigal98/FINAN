@@ -8,6 +8,7 @@ import { FinancialAccount } from './financial-account';
 describe('Accounts route', () => {
   let http: HttpTestingController;
   let harness: RouterTestingHarness;
+  let component: AccountListComponent;
   const account: FinancialAccount = {
     id: '1',
     name: 'Conta principal',
@@ -27,7 +28,7 @@ describe('Accounts route', () => {
     }).compileComponents();
     http = TestBed.inject(HttpTestingController);
     harness = await RouterTestingHarness.create();
-    await harness.navigateByUrl('/accounts', AccountListComponent);
+    component = await harness.navigateByUrl('/accounts', AccountListComponent);
   });
 
   afterEach(() => http.verify());
@@ -88,5 +89,90 @@ describe('Accounts route', () => {
     harness.detectChanges();
     expect(harness.routeNativeElement?.textContent).toContain('Conta principal');
     expect(harness.routeNativeElement?.querySelector('[role="alert"]')).toBeNull();
+  });
+
+  describe('manual creation', () => {
+    beforeEach(() => {
+      http.expectOne('http://localhost:8080/api/accounts').flush([account]);
+      harness.detectChanges();
+    });
+
+    it('blocks empty, whitespace and overlong names and missing balances', () => {
+      const button =
+        harness.routeNativeElement!.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+      expect(button.disabled).toBe(true);
+      for (const name of ['', '   ', 'a'.repeat(81)]) {
+        component.form.setValue({ name, type: 'CHECKING', initialBalance: 0 });
+        harness.detectChanges();
+        expect(button.disabled).toBe(true);
+        component.submit();
+      }
+      component.form.setValue({ name: 'Conta', type: 'CHECKING', initialBalance: null });
+      component.submit();
+      expect(component.form.invalid).toBe(true);
+      http.expectNone('http://localhost:8080/api/accounts');
+    });
+
+    it.each([0, -1500.25])(
+      'posts only manual fields with balance %s and appends the response',
+      (initialBalance) => {
+        component.form.setValue({ name: '  Nubank  ', type: 'CHECKING', initialBalance });
+        harness.detectChanges();
+        harness
+          .routeNativeElement!.querySelector<HTMLButtonElement>('button[type="submit"]')!
+          .click();
+        const request = http.expectOne('http://localhost:8080/api/accounts');
+        expect(request.request.method).toBe('POST');
+        expect(request.request.body).toEqual({ name: 'Nubank', type: 'CHECKING', initialBalance });
+        const created = { ...account, id: 'new', name: 'Nubank', initialBalance };
+        request.flush(created);
+        harness.detectChanges();
+        expect(component.accounts()).toEqual([account, created]);
+        expect(harness.routeNativeElement!.querySelectorAll('tbody tr')).toHaveLength(2);
+        expect(harness.routeNativeElement!.querySelector('tbody')!.textContent).toContain('Nubank');
+        expect(component.form.getRawValue()).toEqual({
+          name: '',
+          type: 'CHECKING',
+          initialBalance: null,
+        });
+        http.expectNone('http://localhost:8080/api/accounts');
+      },
+    );
+
+    it('prevents duplicate submissions while saving', () => {
+      component.form.setValue({ name: 'Conta', type: 'CASH', initialBalance: 0 });
+      component.submit();
+      component.submit();
+      harness.detectChanges();
+      expect(
+        harness.routeNativeElement!.querySelector<HTMLButtonElement>('button[type="submit"]')!
+          .disabled,
+      ).toBe(true);
+      expect(harness.routeNativeElement!.textContent).toContain('Salvando…');
+      http.expectOne('http://localhost:8080/api/accounts').flush(account);
+      expect(component.saving()).toBe(false);
+    });
+
+    it.each([409, 500])('keeps form data after error %s', (status) => {
+      const value = { name: 'Conta', type: 'CASH' as const, initialBalance: -10 };
+      component.form.setValue(value);
+      component.submit();
+      http
+        .expectOne('http://localhost:8080/api/accounts')
+        .flush(null, { status, statusText: 'Error' });
+      harness.detectChanges();
+      expect(component.form.getRawValue()).toEqual(value);
+      expect(component.accounts()).toEqual([account]);
+      expect(component.saving()).toBe(false);
+      expect(harness.routeNativeElement!.querySelector('[role="alert"]')!.textContent).toContain(
+        status === 409
+          ? 'Já existe uma conta ativa com esse nome'
+          : 'Não foi possível cadastrar a conta.',
+      );
+      expect(
+        harness.routeNativeElement!.querySelector<HTMLButtonElement>('button[type="submit"]')!
+          .disabled,
+      ).toBe(false);
+    });
   });
 });
