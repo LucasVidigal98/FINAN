@@ -1,0 +1,90 @@
+:host {
+  display: block;
+}
+
+.heading {
+  margin-bottom: 2rem;
+}
+
+.eyebrow,
+th {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.eyebrow {
+  margin: 0 0 0.5rem;
+  color: #818cf8;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2rem, 6vw, 4rem);
+  font-weight: 500;
+  line-height: 1.04;
+}
+
+.intro,
+th {
+  color: #a1a1aa;
+}
+
+.intro {
+  margin: 0.75rem 0 0;
+  line-height: 1.6;
+}
+
+.table-card {
+  overflow-x: auto;
+  border: 1px solid #27272a;
+  border-radius: 1rem;
+  background: #18181c;
+}
+
+table {
+  width: 100%;
+  min-width: 36rem;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 1rem 1.5rem;
+  text-align: left;
+}
+
+td {
+  border-top: 1px solid #27272a;
+  overflow-wrap: anywhere;
+}
+
+th:last-child,
+td:last-child {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+td[colspan] {
+  height: 10rem;
+  text-align: center;
+  color: #a1a1aa;
+}
+
+button {
+  border: 1px solid #27272a;
+  border-radius: 0.5rem;
+  background: #818cf8;
+  color: #0e0e10;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+}
+
+button:focus-visible,
+.table-card:focus-visible {
+  outline: 2px solid #818cf8;
+  outline-offset: 2px;
+}

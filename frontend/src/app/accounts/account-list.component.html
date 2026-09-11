@@ -1,0 +1,44 @@
+<div class="heading">
+  <p class="eyebrow">Contas financeiras</p>
+  <h1>Contas</h1>
+  <p class="intro">Saldo informado pelo provedor ou, quando indisponível, saldo inicial.</p>
+</div>
+
+@if (loading()) {
+  <p role="status">Carregando contas...</p>
+} @else if (loadError()) {
+  <p role="alert">Não foi possível carregar as contas.</p>
+  <button type="button" (click)="loadAccounts()">Tentar novamente</button>
+} @else {
+  <div class="table-card" tabindex="0" role="region" aria-label="Contas financeiras">
+    <table aria-label="Lista de contas">
+      <thead>
+        <tr>
+          <th scope="col">Nome</th>
+          <th scope="col">Tipo</th>
+          <th scope="col">Origem</th>
+          <th scope="col">Saldo</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (account of accounts(); track account.id) {
+          <tr>
+            <td>{{ account.name }}</td>
+            <td>{{ typeLabels[account.type] }}</td>
+            <td>{{ sourceLabels[account.source] }}</td>
+            <td>
+              {{
+                (account.providerBalance ?? account.initialBalance
+                  | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR') ?? 'Não informado'
+              }}
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="4">Nenhuma conta cadastrada.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

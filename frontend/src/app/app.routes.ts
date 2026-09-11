@@ -15,6 +15,13 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'accounts',
+    loadComponent: () =>
+      import('./accounts/account-list.component').then(
+        (component) => component.AccountListComponent,
+      ),
+  },
+  {
     path: 'categories',
     loadComponent: () =>
       import('./categories/category-page.component').then(
