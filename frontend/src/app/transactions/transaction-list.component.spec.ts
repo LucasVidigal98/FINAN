@@ -2,6 +2,7 @@ import { registerLocaleData } from '@angular/common';
 import localePt from '@angular/common/locales/pt';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of, Subject } from 'rxjs';
+import { FinancialAccountService } from '../accounts/financial-account.service';
 import { CategoryResponse } from '../categories/category.model';
 import { CategoryService } from '../categories/category.service';
 import { Transaction } from './transaction';
@@ -41,6 +42,7 @@ describe('TransactionListComponent', () => {
       type: 'EXPENSE',
       source: 'MANUAL',
       category: { id: 'category-id', name: 'Alimentação', color: '#EF4444' },
+      account: null,
       createdAt: '2026-09-06T12:00:00Z',
       updatedAt: '2026-09-06T12:00:00Z',
     },
@@ -52,6 +54,7 @@ describe('TransactionListComponent', () => {
       type: 'EXPENSE',
       source: 'MANUAL',
       category: null,
+      account: null,
       createdAt: '2026-09-05T12:00:00Z',
       updatedAt: '2026-09-05T12:00:00Z',
     },
@@ -71,6 +74,7 @@ describe('TransactionListComponent', () => {
       providers: [
         { provide: TransactionService, useValue: transactionService },
         { provide: CategoryService, useValue: categoryService },
+        { provide: FinancialAccountService, useValue: { findAll: () => of([]) } },
       ],
     }).compileComponents();
     fixture = TestBed.createComponent(TransactionListComponent);

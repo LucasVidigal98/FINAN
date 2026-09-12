@@ -3,7 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
-import { AccountType, FinancialAccount } from './financial-account';
+import { ACCOUNT_TYPE_LABELS, AccountType, FinancialAccount } from './financial-account';
 import { FinancialAccountService } from './financial-account.service';
 
 @Component({
@@ -29,12 +29,7 @@ export class AccountListComponent {
   readonly accounts = signal<FinancialAccount[]>([]);
   readonly loading = signal(true);
   readonly loadError = signal(false);
-  readonly typeLabels: Record<AccountType, string> = {
-    CHECKING: 'Conta corrente',
-    SAVINGS: 'Poupança',
-    CASH: 'Dinheiro',
-    INVESTMENT: 'Investimento',
-  };
+  readonly typeLabels = ACCOUNT_TYPE_LABELS;
   readonly sourceLabels = { MANUAL: 'Manual', PLUGGY: 'Pluggy' };
   readonly accountTypes = Object.keys(this.typeLabels) as AccountType[];
 

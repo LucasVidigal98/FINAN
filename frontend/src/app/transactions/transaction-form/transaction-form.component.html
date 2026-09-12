@@ -43,6 +43,20 @@
     </select>
   </label>
 
+  <label>
+    Conta
+    <select formControlName="accountId">
+      <option [ngValue]="null">
+        {{ accountsLoading() ? 'Carregando contas...' : 'Sem conta' }}
+      </option>
+      @for (account of accounts(); track account.id) {
+        <option [value]="account.id">
+          {{ account.name }} — {{ accountTypeLabels[account.type] }}
+        </option>
+      }
+    </select>
+  </label>
+
   <button type="submit" [disabled]="form.invalid || isSubmitting">
     {{ isSubmitting ? 'Salvando…' : 'Adicionar transação' }}
   </button>
@@ -54,6 +68,12 @@
   @if (categoriesLoadError()) {
     <p class="category-load-error" role="status">
       As categorias não puderam ser carregadas. Você ainda pode salvar sem categoria.
+    </p>
+  }
+
+  @if (accountsLoadError()) {
+    <p class="category-load-error" role="status">
+      As contas não puderam ser carregadas. Você ainda pode salvar sem conta.
     </p>
   }
 </form>

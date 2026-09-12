@@ -2,6 +2,8 @@ import { Component, inject, output, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
+import { ACCOUNT_TYPE_LABELS, FinancialAccount } from '../../accounts/financial-account';
+import { FinancialAccountService } from '../../accounts/financial-account.service';
 import { CategoryResponse } from '../../categories/category.model';
 import { CategoryService } from '../../categories/category.service';
 import { Transaction, TransactionType } from '../transaction';
@@ -18,6 +20,7 @@ export class TransactionFormComponent {
   private readonly formBuilder = inject(FormBuilder);
   private readonly transactionService = inject(TransactionService);
   private readonly categoryService = inject(CategoryService);
+  private readonly accountService = inject(FinancialAccountService);
   private readonly today = new Date().toISOString().substring(0, 10);
 
   readonly transactionCreated = output<Transaction>();
@@ -27,15 +30,33 @@ export class TransactionFormComponent {
     occurredOn: [this.today, Validators.required],
     type: ['EXPENSE' as TransactionType, Validators.required],
     categoryId: this.formBuilder.control<string | null>(null),
+    accountId: this.formBuilder.control<string | null>({ value: null, disabled: true }),
   });
   readonly categories = signal<CategoryResponse[]>([]);
   readonly categoriesLoading = signal(true);
   readonly categoriesLoadError = signal(false);
+  readonly accounts = signal<FinancialAccount[]>([]);
+  readonly accountsLoading = signal(true);
+  readonly accountsLoadError = signal(false);
+  readonly accountTypeLabels = ACCOUNT_TYPE_LABELS;
 
   isSubmitting = false;
   errorMessage = '';
 
   constructor() {
+    this.accountService
+      .findAll()
+      .pipe(
+        finalize(() => {
+          this.accountsLoading.set(false);
+          this.form.controls.accountId.enable();
+        }),
+      )
+      .subscribe({
+        next: (accounts) => this.accounts.set(accounts.filter((account) => account.active)),
+        error: () => this.accountsLoadError.set(true),
+      });
+
     this.categoryService
       .findAll()
       .pipe(finalize(() => this.categoriesLoading.set(false)))
@@ -78,6 +99,7 @@ export class TransactionFormComponent {
             occurredOn: this.today,
             type: 'EXPENSE',
             categoryId: null,
+            accountId: null,
           });
         },
         error: () => (this.errorMessage = 'Não foi possível adicionar a transação.'),
