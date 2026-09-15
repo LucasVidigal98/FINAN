@@ -62,23 +62,87 @@ describe('TransactionListComponent', () => {
   const transactionService = {
     findAll: vi.fn(() => of(transactions)),
     updateCategory: vi.fn(),
+    updateAccount: vi.fn(),
   };
   const categoryService = { findAll: vi.fn(() => of(categories)) };
 
   beforeEach(async () => {
     transactionService.findAll.mockReset().mockReturnValue(of(transactions));
     transactionService.updateCategory.mockReset();
+    transactionService.updateAccount.mockReset();
     categoryService.findAll.mockReset().mockReturnValue(of(categories));
     await TestBed.configureTestingModule({
       imports: [TransactionListComponent],
       providers: [
         { provide: TransactionService, useValue: transactionService },
         { provide: CategoryService, useValue: categoryService },
-        { provide: FinancialAccountService, useValue: { findAll: () => of([]) } },
+        {
+          provide: FinancialAccountService,
+          useValue: {
+            findAll: () =>
+              of([
+                { id: 'a', name: 'Banco A', type: 'CHECKING', source: 'MANUAL', active: true },
+                { id: 'b', name: 'Banco B', type: 'CHECKING', source: 'MANUAL', active: true },
+              ]),
+          },
+        },
       ],
     }).compileComponents();
     fixture = TestBed.createComponent(TransactionListComponent);
     fixture.detectChanges();
+  });
+
+  it('assigns, switches and removes accounts without reloading, and restores on failure', () => {
+    const selects = fixture.nativeElement.querySelectorAll(
+      '.account-select',
+    ) as NodeListOf<HTMLSelectElement>;
+    const otherRow = fixture.nativeElement.querySelector('tbody tr:nth-child(2)');
+    expect(selects[0].selectedOptions[0].text).toBe('Sem conta');
+    for (const accountId of ['a', 'b', null]) {
+      const request = new Subject<Transaction>();
+      transactionService.updateAccount.mockReturnValue(request);
+      selects[0].value = accountId ?? '';
+      selects[0].dispatchEvent(new Event('change'));
+      fixture.detectChanges();
+      expect(transactionService.updateAccount).toHaveBeenLastCalledWith('1', accountId);
+      expect(selects[0].disabled).toBe(true);
+      expect(selects[1].disabled).toBe(false);
+      expect(fixture.nativeElement.querySelector('.category-select').disabled).toBe(true);
+      const saved: Transaction = {
+        ...transactions[0],
+        account: accountId
+          ? {
+              id: accountId,
+              name: accountId === 'a' ? 'Banco A' : 'Banco B',
+              type: 'CHECKING',
+              source: 'MANUAL',
+            }
+          : null,
+      };
+      request.next(saved);
+      request.complete();
+      fixture.detectChanges();
+      expect(selects[0].value).toBe(accountId ?? '');
+      expect(selects[0].disabled).toBe(false);
+      expect(selects[1].value).toBe('');
+      expect(fixture.nativeElement.querySelector('tbody tr:nth-child(2)')).toBe(otherRow);
+      if (accountId) {
+        const failed = new Subject<Transaction>();
+        transactionService.updateAccount.mockReturnValue(failed);
+        selects[0].value = '';
+        selects[0].dispatchEvent(new Event('change'));
+        fixture.detectChanges();
+        failed.error(new Error('network'));
+        fixture.detectChanges();
+        expect(selects[0].value).toBe(accountId);
+        expect(selects[0].disabled).toBe(false);
+        expect(fixture.nativeElement.querySelector('[role="alert"]').textContent).toContain(
+          'Tente novamente',
+        );
+      }
+    }
+    expect(selects[0].selectedOptions[0].text).toBe('Sem conta');
+    expect(transactionService.findAll).toHaveBeenCalledTimes(1);
   });
 
   it('shows only compatible categories and the uncategorized option', () => {

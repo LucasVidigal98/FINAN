@@ -21,4 +21,8 @@ export class TransactionService {
   updateCategory(transactionId: string, categoryId: string | null): Observable<Transaction> {
     return this.http.patch<Transaction>(`${this.apiUrl}/${transactionId}/category`, { categoryId });
   }
+
+  updateAccount(transactionId: string, accountId: string | null): Observable<Transaction> {
+    return this.http.patch<Transaction>(`${this.apiUrl}/${transactionId}/account`, { accountId });
+  }
 }
