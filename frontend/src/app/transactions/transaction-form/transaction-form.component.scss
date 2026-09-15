@@ -1,6 +1,6 @@
 form {
   display: grid;
-  grid-template-columns: 2fr repeat(4, minmax(8rem, 1fr)) auto;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
   align-items: end;
   margin-bottom: 2rem;

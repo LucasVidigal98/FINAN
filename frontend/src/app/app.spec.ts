@@ -21,5 +21,6 @@ describe('App', () => {
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('router-outlet')).not.toBeNull();
+    expect(compiled.querySelector('nav a[href="/accounts"]')?.textContent).toBe('Contas');
   });
 });

@@ -6,4 +6,5 @@ export interface CreateTransactionRequest {
   occurredOn: string;
   type: TransactionType;
   categoryId: string | null;
+  accountId: string | null;
 }

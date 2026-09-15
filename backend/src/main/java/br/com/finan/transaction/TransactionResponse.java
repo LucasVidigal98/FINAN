@@ -13,6 +13,7 @@ public record TransactionResponse(
         TransactionType type,
         TransactionSource source,
         CategorySummaryResponse category,
+        AccountSummaryResponse account,
         Instant createdAt,
         Instant updatedAt
 ) {}

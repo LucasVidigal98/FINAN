@@ -14,5 +14,6 @@ public record CreateTransactionRequest(
         @NotNull @DecimalMin(value = "0.01") BigDecimal amount,
         @NotNull LocalDate occurredOn,
         @NotNull TransactionType type,
-        UUID categoryId
+        UUID categoryId,
+        UUID accountId
 ) {}
