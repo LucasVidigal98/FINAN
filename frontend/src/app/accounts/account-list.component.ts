@@ -5,10 +5,11 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { ACCOUNT_TYPE_LABELS, AccountType, FinancialAccount } from './financial-account';
 import { FinancialAccountService } from './financial-account.service';
+import { CurrencyInputDirective } from '../shared/currency-input.directive';
 
 @Component({
   selector: 'app-account-list',
-  imports: [CurrencyPipe, ReactiveFormsModule],
+  imports: [CurrencyInputDirective, CurrencyPipe, ReactiveFormsModule],
   templateUrl: './account-list.component.html',
   styleUrl: './account-list.component.scss',
 })

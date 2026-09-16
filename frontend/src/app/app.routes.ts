@@ -28,4 +28,11 @@ export const routes: Routes = [
         (component) => component.CategoryPageComponent,
       ),
   },
+  {
+    path: 'fixed-entries',
+    loadComponent: () =>
+      import('./fixed-entries/fixed-entry-page.component').then(
+        (component) => component.FixedEntryPageComponent,
+      ),
+  },
 ];

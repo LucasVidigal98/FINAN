@@ -34,6 +34,8 @@ export class TransactionListComponent {
   protected readonly accountsLoadError = signal(false);
   protected readonly savingAccountIds = signal(new Set<string>());
   protected readonly accountError = signal('');
+  protected readonly deletingIds = signal(new Set<string>());
+  protected readonly deleteError = signal('');
 
   constructor() {
     this.accountService
@@ -121,6 +123,30 @@ export class TransactionListComponent {
           this.replaceTransaction(transaction);
           this.accountError.set('Não foi possível atualizar a conta. Tente novamente.');
         },
+      });
+  }
+
+  protected deleteTransaction(transaction: Transaction): void {
+    this.deleteError.set('');
+    this.deletingIds.update((ids) => new Set(ids).add(transaction.id));
+    this.transactionService
+      .delete(transaction.id)
+      .pipe(
+        finalize(() =>
+          this.deletingIds.update((ids) => {
+            const updated = new Set(ids);
+            updated.delete(transaction.id);
+            return updated;
+          }),
+        ),
+      )
+      .subscribe({
+        next: () =>
+          this.state.update((state) => ({
+            ...state,
+            transactions: state.transactions.filter((item) => item.id !== transaction.id),
+          })),
+        error: () => this.deleteError.set('Não foi possível excluir a transação. Tente novamente.'),
       });
   }
 

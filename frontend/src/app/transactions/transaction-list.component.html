@@ -5,6 +5,9 @@
 @if (accountError()) {
   <p role="alert">{{ accountError() }}</p>
 }
+@if (deleteError()) {
+  <p role="alert">{{ deleteError() }}</p>
+}
 
 @if (state().loading) {
   <p role="status">Carregando transações...</p>
@@ -23,6 +26,7 @@
             <th scope="col">Categoria</th>
             <th scope="col">Conta</th>
             <th scope="col">Origem</th>
+            <th scope="col"><span class="sr-only">Ações</span></th>
           </tr>
         </thead>
         <tbody>
@@ -83,10 +87,23 @@
                 </select>
               </td>
               <td>{{ transaction.source }}</td>
+              <td class="actions">
+                @if (transaction.deletable) {
+                  <button
+                    type="button"
+                    class="delete"
+                    [disabled]="deletingIds().has(transaction.id)"
+                    [attr.aria-label]="'Excluir ' + transaction.description"
+                    (click)="deleteTransaction(transaction)"
+                  >
+                    {{ deletingIds().has(transaction.id) ? 'Excluindo…' : 'Excluir' }}
+                  </button>
+                }
+              </td>
             </tr>
           } @empty {
             <tr>
-              <td colspan="7">Nenhuma transação cadastrada.</td>
+              <td colspan="8">Nenhuma transação cadastrada.</td>
             </tr>
           }
         </tbody>

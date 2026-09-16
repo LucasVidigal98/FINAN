@@ -25,4 +25,18 @@ describe('TransactionService', () => {
     }
     http.verify();
   });
+
+  it('deletes a transaction', () => {
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
+    const service = TestBed.inject(TransactionService);
+    const http = TestBed.inject(HttpTestingController);
+
+    service.delete('transaction-id').subscribe();
+    const request = http.expectOne('http://localhost:8080/api/transactions/transaction-id');
+    expect(request.request.method).toBe('DELETE');
+    request.flush(null);
+    http.verify();
+  });
 });

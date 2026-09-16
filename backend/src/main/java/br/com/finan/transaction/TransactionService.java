@@ -44,6 +44,18 @@ public class TransactionService {
     }
 
     @Transactional
+    public void delete(UUID transactionId) {
+        FinancialTransaction transaction = repository.findById(transactionId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Transaction not found"));
+        if (transaction.getSource() != TransactionSource.MANUAL || transaction.getFixedEntry() != null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Only manually created transactions can be deleted");
+        }
+        repository.delete(transaction);
+    }
+
+    @Transactional
     public TransactionResponse updateCategory(UUID transactionId,
             UpdateTransactionCategoryRequest request) {
         FinancialTransaction transaction = repository.findById(transactionId)
@@ -103,6 +115,7 @@ public class TransactionService {
                         category.getId(), category.getName(), category.getColor()),
                 account == null ? null : new AccountSummaryResponse(
                         account.getId(), account.getName(), account.getType(), account.getSource()),
-                transaction.getCreatedAt(), transaction.getUpdatedAt());
+                transaction.getCreatedAt(), transaction.getUpdatedAt(),
+                transaction.getSource() == TransactionSource.MANUAL && transaction.getFixedEntry() == null);
     }
 }

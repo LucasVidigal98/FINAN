@@ -25,4 +25,8 @@ export class TransactionService {
   updateAccount(transactionId: string, accountId: string | null): Observable<Transaction> {
     return this.http.patch<Transaction>(`${this.apiUrl}/${transactionId}/account`, { accountId });
   }
+
+  delete(transactionId: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${transactionId}`);
+  }
 }

@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -204,6 +205,28 @@ class TransactionControllerTests {
         mvc.perform(get("/api/transactions"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    void deletesManualTransaction() throws Exception {
+        FinancialTransaction transaction = save("Mercado", LocalDate.of(2026, 9, 5));
+
+        mvc.perform(delete("/api/transactions/{id}", transaction.getId()))
+                .andExpect(status().isNoContent());
+
+        assertThat(repository.findById(transaction.getId())).isEmpty();
+    }
+
+    @Test
+    void rejectsDeletionOfImportedTransaction() throws Exception {
+        FinancialTransaction transaction = save("Mercado", LocalDate.of(2026, 9, 5));
+        transaction.setSource(TransactionSource.PLUGGY);
+        repository.flush();
+
+        mvc.perform(delete("/api/transactions/{id}", transaction.getId()))
+                .andExpect(status().isConflict());
+
+        assertThat(repository.findById(transaction.getId())).isPresent();
     }
 
     @ParameterizedTest

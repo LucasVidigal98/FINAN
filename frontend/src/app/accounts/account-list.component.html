@@ -37,8 +37,9 @@
         <label for="account-balance">Saldo inicial (R$)</label>
         <input
           id="account-balance"
-          type="number"
-          step="0.01"
+          currencyInput
+          type="text"
+          inputmode="decimal"
           formControlName="initialBalance"
           required
           aria-describedby="balance-hint"

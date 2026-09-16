@@ -15,5 +15,6 @@ public record TransactionResponse(
         CategorySummaryResponse category,
         AccountSummaryResponse account,
         Instant createdAt,
-        Instant updatedAt
+        Instant updatedAt,
+        boolean deletable
 ) {}

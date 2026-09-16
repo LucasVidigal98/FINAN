@@ -1,0 +1,125 @@
+<section class="heading">
+  <div>
+    <p class="eyebrow">Organização financeira</p>
+    <h1>Fixos</h1>
+    <p class="intro">Repete todo mês no dia escolhido; em meses mais curtos, usa o último dia.</p>
+  </div>
+</section>
+
+<section class="layout">
+  <form class="card" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="form-heading">
+      <p class="eyebrow">Novo FIXO</p>
+      <h2>Dados do lançamento</h2>
+    </div>
+    <label for="fixed-description">Descrição</label>
+    <input
+      id="fixed-description"
+      type="text"
+      formControlName="description"
+      maxlength="150"
+      [attr.aria-invalid]="form.controls.description.invalid && form.controls.description.touched"
+    />
+    @if (form.controls.description.touched && form.controls.description.invalid) {
+      <p class="field-error">Informe uma descrição de até 150 caracteres.</p>
+    }
+    <label for="fixed-amount">Valor</label>
+    <input
+      id="fixed-amount"
+      currencyInput
+      type="text"
+      inputmode="decimal"
+      formControlName="amount"
+    />
+    <label for="fixed-type">Tipo</label>
+    <select id="fixed-type" formControlName="type">
+      <option value="INCOME">Receita</option>
+      <option value="EXPENSE">Despesa</option>
+    </select>
+    <label for="fixed-category">Categoria</label>
+    <select id="fixed-category" formControlName="categoryId" [disabled]="categoriesLoading()">
+      <option value="">Selecione uma categoria</option>
+      @for (category of compatibleCategories(); track category.id) {
+        <option [value]="category.id">{{ category.name }}</option>
+      }
+    </select>
+    @if (!categoriesLoading() && !compatibleCategories().length) {
+      <p class="field-error">Cadastre uma categoria ativa compatível em Categorias.</p>
+    }
+    <label for="fixed-starts-on">Data inicial prevista</label>
+    <input id="fixed-starts-on" type="date" formControlName="startsOn" />
+    <button
+      type="submit"
+      [disabled]="form.invalid || isSubmitting || !compatibleCategories().length"
+    >
+      {{ isSubmitting ? 'Salvando…' : 'Adicionar FIXO' }}
+    </button>
+    @if (errorMessage) {
+      <p class="submit-error" role="alert">{{ errorMessage }}</p>
+    }
+  </form>
+
+  <section class="list-card" aria-labelledby="fixed-list-title">
+    <div class="list-heading">
+      <div>
+        <p class="eyebrow">Cadastrados</p>
+        <h2 id="fixed-list-title">Seus FIXOs</h2>
+      </div>
+    </div>
+    @if (loading()) {
+      <div class="state" role="status">Carregando FIXOs...</div>
+    } @else if (loadError()) {
+      <div class="state error" role="alert">
+        <p>Não foi possível carregar os FIXOs.</p>
+        <button type="button" (click)="loadEntries()">Tentar novamente</button>
+      </div>
+    } @else {
+      <ul class="entry-list">
+        @for (entry of entries(); track entry.id) {
+          <li>
+            <div>
+              <strong>{{ entry.description }}</strong
+              ><span
+                >{{ categoryName(entry) }} · dia {{ entry.startsOn.slice(8, 10) }} · início
+                {{ entry.startsOn }}</span
+              >
+            </div>
+            <span class="amount">R$ {{ entry.amount | number: '1.2-2' }}</span
+            ><span class="status" [class.inactive]="!entry.active">{{
+              entry.active ? 'Ativo' : 'Inativo'
+            }}</span>
+            <div class="actions">
+              <button
+                type="button"
+                [disabled]="togglingId === entry.id || deletingId === entry.id"
+                (click)="toggle(entry)"
+              >
+                {{ togglingId === entry.id ? 'Salvando…' : entry.active ? 'Desativar' : 'Ativar' }}
+              </button>
+              @if (entry.active) {
+                <button
+                  type="button"
+                  class="delete"
+                  [disabled]="togglingId === entry.id || deletingId === entry.id"
+                  [attr.aria-label]="'Excluir ' + entry.description"
+                  [attr.title]="'Excluir ' + entry.description"
+                  (click)="delete(entry)"
+                >
+                  @if (deletingId === entry.id) {
+                    …
+                  } @else {
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M3 6h18M9 6V4h6v2m-8 0 1 14h8l1-14M10 10v6m4-6v6" />
+                    </svg>
+                  }
+                </button>
+              }
+            </div>
+          </li>
+        } @empty {
+          <li class="empty">Cadastre seu primeiro FIXO usando o formulário.</li>
+        }
+      </ul>
+    }
+  </section>
+</section>

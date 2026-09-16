@@ -5,6 +5,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.CacheControl;
+import org.springframework.http.ResponseEntity;
 
 @RestController
 @RequestMapping("/api/dashboard")
@@ -18,7 +20,7 @@ public class DashboardController {
     }
 
     @GetMapping("/monthly")
-    public MonthlySummaryResponse monthly(@RequestParam int year, @RequestParam int month) {
-        return service.monthly(year, month);
+    public ResponseEntity<MonthlySummaryResponse> monthly(@RequestParam int year, @RequestParam int month) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(service.monthly(year, month));
     }
 }

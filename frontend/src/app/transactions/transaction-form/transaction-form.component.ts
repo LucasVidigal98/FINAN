@@ -6,13 +6,14 @@ import { ACCOUNT_TYPE_LABELS, FinancialAccount } from '../../accounts/financial-
 import { FinancialAccountService } from '../../accounts/financial-account.service';
 import { CategoryResponse } from '../../categories/category.model';
 import { CategoryService } from '../../categories/category.service';
+import { CurrencyInputDirective } from '../../shared/currency-input.directive';
 import { Transaction, TransactionType } from '../transaction';
 import { TransactionService } from '../transaction.service';
 
 @Component({
   selector: 'app-transaction-form',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [CurrencyInputDirective, ReactiveFormsModule],
   templateUrl: './transaction-form.component.html',
   styleUrl: './transaction-form.component.scss',
 })
