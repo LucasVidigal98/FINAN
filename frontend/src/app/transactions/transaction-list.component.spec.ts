@@ -45,6 +45,7 @@ describe('TransactionListComponent', () => {
       account: null,
       createdAt: '2026-09-06T12:00:00Z',
       updatedAt: '2026-09-06T12:00:00Z',
+      deletable: true,
     },
     {
       id: '2',
@@ -52,17 +53,19 @@ describe('TransactionListComponent', () => {
       amount: 20,
       occurredOn: '2026-09-05',
       type: 'EXPENSE',
-      source: 'MANUAL',
+      source: 'PLUGGY',
       category: null,
       account: null,
       createdAt: '2026-09-05T12:00:00Z',
       updatedAt: '2026-09-05T12:00:00Z',
+      deletable: false,
     },
   ];
   const transactionService = {
     findAll: vi.fn(() => of(transactions)),
     updateCategory: vi.fn(),
     updateAccount: vi.fn(),
+    delete: vi.fn(),
   };
   const categoryService = { findAll: vi.fn(() => of(categories)) };
 
@@ -70,6 +73,7 @@ describe('TransactionListComponent', () => {
     transactionService.findAll.mockReset().mockReturnValue(of(transactions));
     transactionService.updateCategory.mockReset();
     transactionService.updateAccount.mockReset();
+    transactionService.delete.mockReset();
     categoryService.findAll.mockReset().mockReturnValue(of(categories));
     await TestBed.configureTestingModule({
       imports: [TransactionListComponent],
@@ -204,5 +208,17 @@ describe('TransactionListComponent', () => {
 
     expect(select.value).toBe('category-id');
     expect(select.disabled).toBe(false);
+  });
+
+  it('removes a manual transaction after successful deletion', () => {
+    transactionService.delete.mockReturnValue(of(void 0));
+    const button = fixture.nativeElement.querySelector('.delete') as HTMLButtonElement;
+
+    expect(fixture.nativeElement.querySelectorAll('.delete')).toHaveLength(1);
+    button.click();
+    fixture.detectChanges();
+
+    expect(transactionService.delete).toHaveBeenCalledWith('1');
+    expect(fixture.nativeElement.querySelectorAll('tbody tr')).toHaveLength(1);
   });
 });

@@ -115,6 +115,18 @@ describe('TransactionFormComponent', () => {
     expect(fixture.componentInstance.form.controls.accountId.value).toBeNull();
   });
 
+  it('formats typed amounts as BRL while keeping the form value numeric', () => {
+    fixture.detectChanges();
+    const input = fixture.nativeElement.querySelector(
+      '[formControlName="amount"]',
+    ) as HTMLInputElement;
+    input.value = '12345';
+    input.dispatchEvent(new Event('input'));
+
+    expect(fixture.componentInstance.form.controls.amount.value).toBe(123.45);
+    expect(input.value).toContain('123,45');
+  });
+
   it('filters active categories by transaction type', () => {
     expect(fixture.componentInstance.filteredCategories().map((category) => category.name)).toEqual(
       ['Alimentação'],

@@ -102,6 +102,38 @@ td:last-child {
   }
 }
 
+.actions {
+  text-align: right;
+}
+
+.delete {
+  border: 1px solid #7f1d1d;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: #fca5a5;
+  padding: 0.45rem 0.65rem;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid #818cf8;
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    cursor: wait;
+    opacity: 0.55;
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
 td[colspan] {
   height: 10rem;
   color: #a1a1aa;

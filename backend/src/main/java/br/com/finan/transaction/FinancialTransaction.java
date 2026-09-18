@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import br.com.finan.account.FinancialAccount;
 import br.com.finan.category.Category;
+import br.com.finan.fixedentry.FixedEntry;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -65,6 +66,13 @@ public class FinancialTransaction {
     @JoinColumn(name = "account_id")
     private FinancialAccount account;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "fixed_entry_id")
+    private FixedEntry fixedEntry;
+
+    @Column(name = "fixed_month")
+    private LocalDate fixedMonth;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -102,6 +110,8 @@ public class FinancialTransaction {
     public TransactionSource getSource() { return source; }
     public Category getCategory() { return category; }
     public FinancialAccount getAccount() { return account; }
+    public FixedEntry getFixedEntry() { return fixedEntry; }
+    public LocalDate getFixedMonth() { return fixedMonth; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 
@@ -112,4 +122,6 @@ public class FinancialTransaction {
     public void setSource(TransactionSource source) { this.source = source; }
     public void setCategory(Category category) { this.category = category; }
     public void setAccount(FinancialAccount account) { this.account = account; }
+    public void setFixedEntry(FixedEntry fixedEntry) { this.fixedEntry = fixedEntry; }
+    public void setFixedMonth(LocalDate fixedMonth) { this.fixedMonth = fixedMonth; }
 }

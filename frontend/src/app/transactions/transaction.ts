@@ -19,4 +19,5 @@ export interface Transaction {
   account: Pick<FinancialAccount, 'id' | 'name' | 'type' | 'source'> | null;
   createdAt: string;
   updatedAt: string;
+  deletable?: boolean;
 }

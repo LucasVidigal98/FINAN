@@ -5,6 +5,7 @@ import java.time.DateTimeException;
 import java.time.YearMonth;
 import java.util.List;
 
+import br.com.finan.fixedentry.FixedEntryService;
 import br.com.finan.transaction.FinancialTransaction;
 import br.com.finan.transaction.FinancialTransactionRepository;
 import br.com.finan.transaction.TransactionType;
@@ -17,12 +18,14 @@ import org.springframework.web.server.ResponseStatusException;
 public class DashboardService {
 
     private final FinancialTransactionRepository repository;
+    private final FixedEntryService fixedEntryService;
 
-    public DashboardService(FinancialTransactionRepository repository) {
+    public DashboardService(FinancialTransactionRepository repository, FixedEntryService fixedEntryService) {
         this.repository = repository;
+        this.fixedEntryService = fixedEntryService;
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public MonthlySummaryResponse monthly(int year, int month) {
         if (year < 1) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid year or month");
@@ -35,8 +38,12 @@ public class DashboardService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid year or month", exception);
         }
 
+        fixedEntryService.materialize(yearMonth);
         List<FinancialTransaction> transactions = repository.findAllByOccurredOnBetween(
-                yearMonth.atDay(1), yearMonth.atEndOfMonth());
+                yearMonth.atDay(1), yearMonth.atEndOfMonth()).stream()
+                .filter(transaction -> transaction.getFixedEntry() == null
+                        || transaction.getFixedEntry().isActive())
+                .toList();
         BigDecimal income = total(transactions, TransactionType.INCOME);
         BigDecimal expense = total(transactions, TransactionType.EXPENSE);
         BigDecimal investment = total(transactions, TransactionType.INVESTMENT);
