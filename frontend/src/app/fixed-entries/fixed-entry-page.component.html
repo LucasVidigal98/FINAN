@@ -96,24 +96,22 @@
               >
                 {{ togglingId === entry.id ? 'Salvando…' : entry.active ? 'Desativar' : 'Ativar' }}
               </button>
-              @if (entry.active) {
-                <button
-                  type="button"
-                  class="delete"
-                  [disabled]="togglingId === entry.id || deletingId === entry.id"
-                  [attr.aria-label]="'Excluir ' + entry.description"
-                  [attr.title]="'Excluir ' + entry.description"
-                  (click)="delete(entry)"
-                >
-                  @if (deletingId === entry.id) {
-                    …
-                  } @else {
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M3 6h18M9 6V4h6v2m-8 0 1 14h8l1-14M10 10v6m4-6v6" />
-                    </svg>
-                  }
-                </button>
-              }
+              <button
+                type="button"
+                class="delete"
+                [disabled]="togglingId === entry.id || deletingId === entry.id"
+                [attr.aria-label]="'Excluir ' + entry.description"
+                [attr.title]="'Excluir ' + entry.description"
+                (click)="delete(entry)"
+              >
+                @if (deletingId === entry.id) {
+                  …
+                } @else {
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M3 6h18M9 6V4h6v2m-8 0 1 14h8l1-14M10 10v6m4-6v6" />
+                  </svg>
+                }
+              </button>
             </div>
           </li>
         } @empty {

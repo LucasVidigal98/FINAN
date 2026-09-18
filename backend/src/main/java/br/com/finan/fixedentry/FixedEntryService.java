@@ -67,10 +67,8 @@ public class FixedEntryService {
         FixedEntry fixedEntry = repository.findByIdForUpdate(id)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Fixed entry not found"));
-        if (transactionRepository.existsByFixedEntry(fixedEntry)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "Fixed entry with generated transactions cannot be deleted");
-        }
+        transactionRepository.deleteAllByFixedEntry(fixedEntry);
+        transactionRepository.flush();
         repository.delete(fixedEntry);
     }
 

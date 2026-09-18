@@ -1,5 +1,13 @@
 # FIXO — Spec
 
+## Correções confirmadas em 17/09/2026
+
+Estas regras substituem as restrições de exclusão e contabilização da proposta original abaixo:
+
+- Excluir um FIXO ativo ou inativo remove também todos os seus lançamentos gerados, de qualquer mês. Lançamentos manuais e de outros FIXOs são preservados.
+- Desativar bloqueia novas gerações e retira os lançamentos desse FIXO dos totais, saldo e contagem do dashboard em todos os meses, inclusive anteriores. Os registros continuam no histórico de transações.
+- Reativar volta a incluir os lançamentos existentes no dashboard sem duplicá-los.
+
 Status: proposta documentada; implementação pendente.
 
 Não há specs de features no repositório. Esta feature inaugura a convenção `docs/features/<feature>/` com Spec, Spec Técnica e Tasks em português.

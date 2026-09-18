@@ -123,4 +123,17 @@ describe('FixedEntryPageComponent', () => {
     expect(fixedEntryService.delete).toHaveBeenCalledWith('1');
     expect(fixture.componentInstance.entries()).toEqual([]);
   });
+
+  it('permite excluir um fixo inativo pelo botão', () => {
+    fixture.componentInstance.entries.set([{ ...entry, active: false }]);
+    fixedEntryService.delete.mockReturnValue(of(void 0));
+    fixture.detectChanges();
+
+    const button: HTMLButtonElement = fixture.nativeElement.querySelector('button.delete');
+    expect(button).not.toBeNull();
+    button.click();
+
+    expect(fixedEntryService.delete).toHaveBeenCalledWith(entry.id);
+    expect(fixture.componentInstance.entries()).toEqual([]);
+  });
 });

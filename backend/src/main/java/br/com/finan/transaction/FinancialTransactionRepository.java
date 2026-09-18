@@ -13,5 +13,5 @@ public interface FinancialTransactionRepository extends JpaRepository<FinancialT
 
     boolean existsByFixedEntryAndFixedMonth(FixedEntry fixedEntry, LocalDate fixedMonth);
 
-    boolean existsByFixedEntry(FixedEntry fixedEntry);
+    void deleteAllByFixedEntry(FixedEntry fixedEntry);
 }

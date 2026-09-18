@@ -40,7 +40,10 @@ public class DashboardService {
 
         fixedEntryService.materialize(yearMonth);
         List<FinancialTransaction> transactions = repository.findAllByOccurredOnBetween(
-                yearMonth.atDay(1), yearMonth.atEndOfMonth());
+                yearMonth.atDay(1), yearMonth.atEndOfMonth()).stream()
+                .filter(transaction -> transaction.getFixedEntry() == null
+                        || transaction.getFixedEntry().isActive())
+                .toList();
         BigDecimal income = total(transactions, TransactionType.INCOME);
         BigDecimal expense = total(transactions, TransactionType.EXPENSE);
         BigDecimal investment = total(transactions, TransactionType.INVESTMENT);

@@ -146,11 +146,7 @@ export class FixedEntryPageComponent {
       .subscribe({
         next: () =>
           this.entries.update((entries) => entries.filter((item) => item.id !== entry.id)),
-        error: (error: HttpErrorResponse) =>
-          (this.errorMessage =
-            error.status === 409
-              ? 'Este FIXO já possui lançamentos e não pode ser excluído. Desative-o para preservar o histórico.'
-              : 'Não foi possível excluir o FIXO. Tente novamente.'),
+        error: () => (this.errorMessage = 'Não foi possível excluir o FIXO. Tente novamente.'),
       });
   }
 
