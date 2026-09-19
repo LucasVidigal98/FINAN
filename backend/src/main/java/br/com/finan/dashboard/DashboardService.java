@@ -1,6 +1,7 @@
 package br.com.finan.dashboard;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.DateTimeException;
 import java.time.YearMonth;
 import java.util.List;
@@ -50,6 +51,38 @@ public class DashboardService {
 
         return new MonthlySummaryResponse(year, month, income, expense, investment,
                 income.subtract(expense).subtract(investment), transactions.size());
+    }
+
+    @Transactional
+    public DashboardComparisonResponse comparison(int year, int month) {
+        if (year < 1 || year > 9999 || month < 1 || month > 12 || (year == 1 && month == 1)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid year or month");
+        }
+        YearMonth currentPeriod = YearMonth.of(year, month);
+        YearMonth previousPeriod = currentPeriod.minusMonths(1);
+
+        MonthlySummaryResponse previous = monthly(previousPeriod.getYear(), previousPeriod.getMonthValue());
+        MonthlySummaryResponse current = monthly(currentPeriod.getYear(), currentPeriod.getMonthValue());
+
+        return new DashboardComparisonResponse(currentPeriod.toString(), previousPeriod.toString(),
+                new ComparisonMetrics(
+                        compare(current.totalIncome(), previous.totalIncome()),
+                        compare(current.totalExpense(), previous.totalExpense()),
+                        compare(balance(current), balance(previous)),
+                        compare(current.totalInvestment(), previous.totalInvestment())));
+    }
+
+    private BigDecimal balance(MonthlySummaryResponse summary) {
+        return summary.totalIncome().subtract(summary.totalExpense());
+    }
+
+    private MetricComparison compare(BigDecimal current, BigDecimal previous) {
+        BigDecimal absoluteChange = current.subtract(previous);
+        BigDecimal percentageChange = previous.signum() == 0
+                ? (current.signum() == 0 ? BigDecimal.ZERO : null)
+                : absoluteChange.multiply(BigDecimal.valueOf(100))
+                        .divide(previous, 2, RoundingMode.HALF_UP);
+        return new MetricComparison(current, previous, absoluteChange, percentageChange);
     }
 
     private BigDecimal total(List<FinancialTransaction> transactions, TransactionType type) {

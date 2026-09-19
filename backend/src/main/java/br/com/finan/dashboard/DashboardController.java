@@ -23,4 +23,9 @@ public class DashboardController {
     public ResponseEntity<MonthlySummaryResponse> monthly(@RequestParam int year, @RequestParam int month) {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(service.monthly(year, month));
     }
+
+    @GetMapping("/comparison")
+    public ResponseEntity<DashboardComparisonResponse> comparison(@RequestParam int year, @RequestParam int month) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(service.comparison(year, month));
+    }
 }

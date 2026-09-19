@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { DashboardComparison } from './dashboard-comparison.model';
 import { MonthlySummary } from './monthly-summary.model';
 
 @Injectable({ providedIn: 'root' })
@@ -10,6 +11,12 @@ export class DashboardService {
 
   getMonthlySummary(year: number, month: number): Observable<MonthlySummary> {
     return this.http.get<MonthlySummary>(`${this.apiUrl}/monthly`, {
+      params: { year, month },
+    });
+  }
+
+  getComparison(year: number, month: number): Observable<DashboardComparison> {
+    return this.http.get<DashboardComparison>(`${this.apiUrl}/comparison`, {
       params: { year, month },
     });
   }
