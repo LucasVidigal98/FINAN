@@ -22,7 +22,7 @@ Adicionar GET `/api/dashboard/comparison?year=2026&month=9` ao controller existe
   "metrics": {
     "income": { "current": 8500, "previous": 8000, "absoluteChange": 500, "percentageChange": 6.25 },
     "expense": { "current": 3000, "previous": 4000, "absoluteChange": -1000, "percentageChange": -25 },
-    "balance": { "current": 5500, "previous": 4000, "absoluteChange": 1500, "percentageChange": 37.5 },
+    "balance": { "current": 4500, "previous": 4000, "absoluteChange": 500, "percentageChange": 12.5 },
     "investment": { "current": 1000, "previous": 0, "absoluteChange": 1000, "percentageChange": null }
   }
 }
@@ -30,7 +30,7 @@ Adicionar GET `/api/dashboard/comparison?year=2026&month=9` ao controller existe
 
 Períodos são strings `YYYY-MM`. Campos monetários e percentual são números JSON, sem formatação monetária ou símbolo de porcentagem; `percentageChange` sempre está presente, mesmo quando null. Todos os outros campos são obrigatórios e não nulos.
 
-No pacote dashboard, propor records `MetricComparison` (quatro BigDecimal, percentual nullable), `ComparisonMetrics` (income, expense, balance, investment) e `DashboardComparisonResponse` (duas strings de período e metrics). Não reutilizar `availableBalance` como saldo comparativo.
+No pacote dashboard, propor records `MetricComparison` (quatro BigDecimal, percentual nullable), `ComparisonMetrics` (income, expense, balance, investment) e `DashboardComparisonResponse` (duas strings de período e metrics). Reutilizar `availableBalance` como saldo comparativo, descontando despesas e investimentos.
 
 Validar ambos os períodos antes de materializar: mês entre 1 e 12, ano entre 1 e 9999, e período anterior dentro dessa faixa. Janeiro do ano 1 retorna 400; dezembro de 9999 é válido. Essa faixa mantém o formato de quatro dígitos. Parâmetro ausente/não numérico ou período inválido retorna 400, sem geração parcial. A validação adicional é do novo endpoint, sem mudar o contrato legado.
 
@@ -38,7 +38,7 @@ Validar ambos os períodos antes de materializar: mês entre 1 e 12, ano entre 1
 
 1. Adicionar `comparison(year, month)` no `DashboardService`, com `@Transactional` de escrita abrangendo os dois períodos. Construir `YearMonth` e usar `minusMonths(1)`, sem subtrair manualmente o número do mês.
 2. Reutilizar `monthly` para obter os dois resumos dentro da transação externa, preservando materialização e filtros existentes. Não duplicar consultas/regras em outro serviço nem somar FIXOs diretamente. Se o segundo período falhar, reverter também as gerações do primeiro; não retornar comparação parcial.
-3. Mapear `totalIncome`, `totalExpense` e `totalInvestment`. Calcular cada saldo a partir de `totalIncome.subtract(totalExpense)`.
+3. Mapear `totalIncome`, `totalExpense` e `totalInvestment`. Reutilizar `availableBalance` de cada resumo mensal (receitas menos despesas menos investimentos), sem duplicar o cálculo.
 4. Centralizar em um único método a construção de `MetricComparison`: diferença `current.subtract(previous)`; testar zero com `signum() == 0` ou `compareTo`, nunca com `equals` dependente de escala. Se anterior zero, retornar zero quando atual zero, senão null. Caso contrário, multiplicar a diferença por 100 e dividir pelo anterior com escala 2 e `RoundingMode.HALF_UP`.
 5. Não converter valores para double durante o cálculo. Somar sem arredondamento intermediário e serializar como números JSON. Preservar o sinal do denominador para saldo negativo, conforme hipótese da Spec.
 

@@ -46,7 +46,8 @@ class DashboardServiceTests {
         stubTransactions(Map.of(
                 previous, List.of(transaction("7999.90", previous, TransactionType.INCOME),
                         transaction("0.10", previous, TransactionType.INCOME),
-                        transaction("4000.00", previous, TransactionType.EXPENSE)),
+                        transaction("4000.00", previous, TransactionType.EXPENSE),
+                        transaction("500.00", previous, TransactionType.INVESTMENT)),
                 current, List.of(transaction("8499.90", current, TransactionType.INCOME),
                         transaction("0.10", current, TransactionType.INCOME),
                         transaction("3000.00", current, TransactionType.EXPENSE),
@@ -58,8 +59,8 @@ class DashboardServiceTests {
         assertThat(response.previousPeriod()).isEqualTo("2025-12");
         assertMetric(response.metrics().income(), "8500", "8000", "500", "6.25");
         assertMetric(response.metrics().expense(), "3000", "4000", "-1000", "-25.00");
-        assertMetric(response.metrics().balance(), "5500", "4000", "1500", "37.50");
-        assertMetric(response.metrics().investment(), "1000", "0", "1000", null);
+        assertMetric(response.metrics().balance(), "4500", "3500", "1000", "28.57");
+        assertMetric(response.metrics().investment(), "1000", "500", "500", "100.00");
         verify(fixedEntryService).materialize(previous);
         verify(fixedEntryService).materialize(current);
     }
@@ -117,17 +118,18 @@ class DashboardServiceTests {
         assertMetric(balance, "100", "-100", "200", "-200.00");
     }
 
-    @Test
-    void returnsNullWhenNegativeBalanceHasNoPreviousValue() {
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.EnumSource(value = TransactionType.class, names = {"EXPENSE", "INVESTMENT"})
+    void returnsNullWhenNegativeBalanceHasNoPreviousValue(TransactionType outflow) {
         YearMonth previous = YearMonth.of(2026, 8);
         YearMonth current = YearMonth.of(2026, 9);
         stubTransactions(Map.of(
                 previous, List.of(),
-                current, List.of(transaction("100.00", current, TransactionType.EXPENSE))));
+                current, List.of(transaction("1700.00", current, outflow))));
 
         MetricComparison balance = service.comparison(2026, 9).metrics().balance();
 
-        assertMetric(balance, "-100", "0", "-100", null);
+        assertMetric(balance, "-1700", "0", "-1700", null);
     }
 
     @Test

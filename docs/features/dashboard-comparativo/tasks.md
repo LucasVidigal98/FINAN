@@ -6,7 +6,7 @@ Status: implementação concluída; 111 testes backend e 42 testes frontend apro
 
 - [x] Criar records `MetricComparison`, `ComparisonMetrics` e `DashboardComparisonResponse` no pacote dashboard, com percentual nullable sempre presente no JSON.
 - [x] Implementar `DashboardService.comparison` e GET `/api/dashboard/comparison?year=&month=` com no-store; validar parâmetros e faixa dos dois períodos antes de qualquer geração, usar `YearMonth.minusMonths(1)`.
-- [x] Reutilizar `monthly` em uma transação de escrita externa para ambos os meses. Preservar FIXOs e o endpoint mensal; calcular `balance` como receitas menos despesas, sem descontar investimento.
+- [x] Reutilizar `monthly` em uma transação de escrita externa para ambos os meses. Preservar FIXOs e o endpoint mensal; calcular `balance` como receitas menos despesas menos investimentos, reutilizando `availableBalance`.
 - [x] Centralizar diferença e percentual em BigDecimal; tratar zero independentemente da escala, usar denominador com sinal e HALF_UP com duas casas apenas no percentual final.
 - [x] Adicionar testes de serviço para todos os casos da tabela técnica: aumento, redução, igualdade, zeros, saldo negativo, mudança de sinal e arredondamento.
 
@@ -47,6 +47,6 @@ O GET comparativo materializa FIXOs elegíveis primeiro no mês anterior e depoi
 
 ## Escopo preservado
 
-Hipóteses: total investido é fluxo mensal; percentual usa anterior com sinal; arredondamento HALF_UP; meses completos com dados disponíveis; saldo comparativo distinto de `availableBalance`. Não há questão bloqueante aberta.
+Hipóteses: total investido é fluxo mensal; percentual usa anterior com sinal; arredondamento HALF_UP; meses completos com dados disponíveis; saldo comparativo igual a `availableBalance`, descontando também os investimentos. Não há questão bloqueante aberta.
 
 Pluggy permanece pausada. Sem gráficos, cards comparativos, novos componentes, migrations ou dependências nesta etapa. Próxima tarefa: criar os cards comparativos das quatro métricas.

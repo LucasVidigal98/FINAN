@@ -68,12 +68,8 @@ public class DashboardService {
                 new ComparisonMetrics(
                         compare(current.totalIncome(), previous.totalIncome()),
                         compare(current.totalExpense(), previous.totalExpense()),
-                        compare(balance(current), balance(previous)),
+                        compare(current.availableBalance(), previous.availableBalance()),
                         compare(current.totalInvestment(), previous.totalInvestment())));
-    }
-
-    private BigDecimal balance(MonthlySummaryResponse summary) {
-        return summary.totalIncome().subtract(summary.totalExpense());
     }
 
     private MetricComparison compare(BigDecimal current, BigDecimal previous) {

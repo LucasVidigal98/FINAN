@@ -25,46 +25,54 @@
   </div>
 </section>
 
-@if (isLoading()) {
-  <div class="state" role="status">Carregando resumo...</div>
-} @else if (errorMessage()) {
-  <div class="state error" role="alert">
-    <p>{{ errorMessage() }}</p>
-    <button type="button" (click)="loadSummary()">Tentar novamente</button>
-  </div>
-} @else if (summary()?.transactionCount === 0) {
-  <div class="state">
-    <h2>Nenhuma movimentação</h2>
-    <p>Este mês ainda não possui receitas, despesas ou investimentos.</p>
-  </div>
-} @else if (summary(); as summary) {
-  <section class="summary" aria-label="Resumo financeiro do mês">
-    <article class="card balance">
-      <p>Saldo disponível</p>
-      <strong>
-        {{ summary.availableBalance | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}
-      </strong>
-      <span>
-        {{ summary.transactionCount }}
-        {{ summary.transactionCount === 1 ? 'movimentação' : 'movimentações' }} neste mês
-      </span>
-    </article>
-
-    <div class="metrics">
-      <article class="card income">
-        <p>Receitas</p>
-        <strong>{{ summary.totalIncome | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
-      </article>
-      <article class="card expense">
-        <p>Despesas</p>
-        <strong>{{ summary.totalExpense | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</strong>
-      </article>
-      <article class="card investment">
-        <p>Investimentos</p>
-        <strong>
-          {{ summary.totalInvestment | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}
-        </strong>
-      </article>
+<section class="content" aria-label="Resumo financeiro do mês" [attr.aria-busy]="isLoading()">
+  @if (isLoading()) {
+    <div class="state" role="status">Carregando comparação...</div>
+  } @else if (errorMessage()) {
+    <div class="state error" role="alert">
+      <p>{{ errorMessage() }}</p>
+      <button type="button" (click)="loadSummary()">Tentar novamente</button>
     </div>
-  </section>
-}
+  } @else if (comparison(); as comparison) {
+    <div class="cards">
+      @for (card of cards(); track card.key) {
+        <article class="card" [class]="card.key">
+          <p class="label">{{ card.label }}</p>
+          <strong>{{
+            card.metric.current | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
+          }}</strong>
+
+          <p
+            class="comparison"
+            [class.favorable]="comparisonTone(card.key, card.metric.absoluteChange) === 'favorable'"
+            [class.warning]="comparisonTone(card.key, card.metric.absoluteChange) === 'warning'"
+            [class.neutral]="comparisonTone(card.key, card.metric.absoluteChange) === 'neutral'"
+            [attr.aria-label]="directionLabel(card.metric.absoluteChange)"
+          >
+            <span aria-hidden="true">{{ directionIcon(card.metric.absoluteChange) }}</span>
+            <span class="sr-only">{{ directionLabel(card.metric.absoluteChange) }}</span>
+            <span>{{
+              absoluteDifference(card.metric.absoluteChange)
+                | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
+            }}</span>
+            <span aria-hidden="true">·</span>
+            @if (card.metric.absoluteChange === 0) {
+              <span>0%</span>
+            } @else if (card.metric.percentageChange === null) {
+              <span>Sem base de comparação</span>
+            } @else {
+              <span>{{ card.metric.percentageChange | number: '1.0-2' : 'pt-BR' }}%</span>
+            }
+          </p>
+
+          @if (card.metric.absoluteChange === 0) {
+            <p class="comparison-note">Sem alteração em relação ao mês anterior</p>
+          }
+          <p class="previous-period">
+            em relação a {{ previousPeriodLabel(comparison.previousPeriod) }}
+          </p>
+        </article>
+      }
+    </div>
+  }
+</section>

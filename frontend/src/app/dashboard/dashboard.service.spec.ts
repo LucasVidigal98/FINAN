@@ -30,7 +30,7 @@ describe('DashboardService', () => {
           absoluteChange: -1000,
           percentageChange: -25,
         },
-        balance: { current: 5500, previous: 4000, absoluteChange: 1500, percentageChange: 37.5 },
+        balance: { current: 4500, previous: 4000, absoluteChange: 500, percentageChange: 12.5 },
         investment: {
           current: 1000,
           previous: 0,

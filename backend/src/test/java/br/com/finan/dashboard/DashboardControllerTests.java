@@ -45,7 +45,7 @@ class DashboardControllerTests {
     @Autowired private Clock clock;
 
     @Test
-    void comparesAllMetricsWithoutSubtractingInvestmentFromBalance() throws Exception {
+    void comparesAllMetricsSubtractingInvestmentFromBalance() throws Exception {
         save("Anterior", "8000", LocalDate.of(2026, 8, 1), TransactionType.INCOME);
         save("Anterior", "4000", LocalDate.of(2026, 8, 31), TransactionType.EXPENSE);
         save("Atual", "8500", LocalDate.of(2026, 9, 1), TransactionType.INCOME);
@@ -56,8 +56,8 @@ class DashboardControllerTests {
                 .andExpect(jsonPath("$.currentPeriod").value("2026-09"))
                 .andExpect(jsonPath("$.previousPeriod").value("2026-08"));
         String[] names = {"income", "expense", "balance", "investment"};
-        int[][] amounts = {{8500, 8000, 500}, {3000, 4000, -1000}, {5500, 4000, 1500}, {1000, 0, 1000}};
-        Double[] percentages = {6.25, -25.0, 37.5, null};
+        int[][] amounts = {{8500, 8000, 500}, {3000, 4000, -1000}, {4500, 4000, 500}, {1000, 0, 1000}};
+        Double[] percentages = {6.25, -25.0, 12.5, null};
         for (int i = 0; i < names.length; i++) {
             String path = "$.metrics." + names[i];
             result.andExpect(jsonPath(path + ".current").value(amounts[i][0]))

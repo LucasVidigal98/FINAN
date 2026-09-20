@@ -11,7 +11,7 @@
 }
 
 .eyebrow,
-.card p,
+.label,
 label {
   color: #a1a1aa;
   font-family: 'JetBrains Mono', monospace;
@@ -56,15 +56,9 @@ select {
   padding: 0.7rem 0.8rem;
 }
 
-.summary {
+.cards {
   display: grid;
-  grid-template-columns: minmax(18rem, 1.1fr) 2fr;
-  gap: 1rem;
-}
-
-.metrics {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1rem;
 }
 
@@ -77,9 +71,12 @@ select {
 }
 
 .card {
+  display: flex;
   min-width: 0;
+  min-height: 14rem;
+  flex-direction: column;
 
-  p {
+  .label {
     margin: 0 0 1rem;
   }
 
@@ -92,20 +89,8 @@ select {
 }
 
 .balance {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  min-height: 14rem;
   border-color: #818cf8;
   background: linear-gradient(145deg, #24243a, #18181c);
-
-  strong {
-    font-size: clamp(2rem, 4vw, 3.5rem);
-  }
-
-  span {
-    color: #a1a1aa;
-  }
 }
 
 .income strong {
@@ -116,8 +101,43 @@ select {
   color: #f87171;
 }
 
+.balance strong {
+  color: #fff;
+}
+
 .investment strong {
   color: #60a5fa;
+}
+
+.comparison {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem;
+  margin: 1rem 0 0;
+  color: #a1a1aa;
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
+.comparison.favorable {
+  color: #4ade80;
+}
+
+.comparison.warning {
+  color: #f87171;
+}
+
+.comparison.neutral {
+  color: #a1a1aa;
+}
+
+.comparison-note,
+.previous-period {
+  margin: 0.65rem 0 0;
+  color: #a1a1aa;
+  font-size: 0.8rem;
+  line-height: 1.4;
 }
 
 .state {
@@ -127,7 +147,6 @@ select {
   text-align: center;
   color: #a1a1aa;
 
-  h2,
   p {
     margin: 0.25rem;
   }
@@ -143,14 +162,41 @@ select {
   color: #fca5a5;
 }
 
-@media (max-width: 48rem) {
-  .heading,
-  .summary {
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (min-width: 48rem) and (max-width: 79.999rem) {
+  .cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 47.999rem) {
+  .heading {
     display: grid;
     grid-template-columns: 1fr;
   }
 
-  .metrics {
+  .period {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  select {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .cards {
     grid-template-columns: 1fr;
   }
 }
