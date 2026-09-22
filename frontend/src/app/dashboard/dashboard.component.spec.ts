@@ -5,6 +5,7 @@ import { Observable, of, Subject, throwError } from 'rxjs';
 import { DashboardComponent } from './dashboard.component';
 import { DashboardService } from './dashboard.service';
 import { DashboardComparison, MetricComparison } from './dashboard-comparison.model';
+import { DashboardEvolution } from './dashboard-evolution.model';
 
 registerLocaleData(localePt);
 
@@ -13,6 +14,7 @@ describe('DashboardComponent', () => {
   let response: DashboardComparison;
   const dashboardService = {
     getComparison: vi.fn<(...args: number[]) => Observable<DashboardComparison>>(),
+    getEvolution: vi.fn<(...args: number[]) => Observable<DashboardEvolution>>(),
     getMonthlySummary: vi.fn(),
   };
   const text = (element: Element = fixture.nativeElement): string =>
@@ -32,6 +34,18 @@ describe('DashboardComponent', () => {
     absoluteChange: current - previous,
     percentageChange,
   });
+  const evolution = (year: number, month: number): DashboardEvolution => {
+    const points = Array.from({ length: 6 }, (_, index) => {
+      const date = new Date(year, month - 6 + index, 1);
+      return {
+        period: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`,
+        income: index === 5 ? 8500 : 0,
+        expense: index === 5 ? 3000 : 0,
+        investment: index === 5 ? 1000 : 0,
+      };
+    });
+    return { startPeriod: points[0].period, endPeriod: points[5].period, points };
+  };
 
   beforeEach(async () => {
     response = {
@@ -45,6 +59,9 @@ describe('DashboardComponent', () => {
       },
     };
     dashboardService.getComparison.mockReset().mockImplementation(() => of(response));
+    dashboardService.getEvolution
+      .mockReset()
+      .mockImplementation((year, month) => of(evolution(year, month)));
     dashboardService.getMonthlySummary.mockReset();
     await TestBed.configureTestingModule({
       imports: [DashboardComponent],
@@ -52,10 +69,14 @@ describe('DashboardComponent', () => {
     }).compileComponents();
   });
 
-  it('loads only the comparison and renders four ordered metrics with Brazilian formatting', () => {
+  it('loads comparison and evolution together and renders four ordered metrics with Brazilian formatting', () => {
     render();
     const today = new Date();
     expect(dashboardService.getComparison).toHaveBeenCalledWith(
+      today.getFullYear(),
+      today.getMonth() + 1,
+    );
+    expect(dashboardService.getEvolution).toHaveBeenCalledWith(
       today.getFullYear(),
       today.getMonth() + 1,
     );

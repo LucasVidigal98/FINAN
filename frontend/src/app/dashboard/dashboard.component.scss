@@ -162,6 +162,127 @@ select {
   color: #fca5a5;
 }
 
+.chart-skeleton,
+.evolution {
+  margin-top: 1rem;
+  border: 1px solid #27272a;
+  border-radius: 1rem;
+  background: #18181c;
+}
+
+.chart-skeleton {
+  height: 19rem;
+  background: linear-gradient(100deg, #18181c 20%, #27272a 50%, #18181c 80%);
+}
+
+.evolution {
+  padding: 1.5rem;
+}
+
+figcaption {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: start;
+
+  .label {
+    margin: 0 0 0.5rem;
+  }
+  h2 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 500;
+  }
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  color: #d4d4d8;
+  font-size: 0.8rem;
+
+  span {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  i {
+    width: 1.5rem;
+    border-top: 2px solid;
+  }
+}
+
+.chart-shell {
+  position: relative;
+  margin-top: 1rem;
+}
+
+svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 15rem;
+}
+
+svg text {
+  fill: #a1a1aa;
+  font-size: 12px;
+}
+polyline {
+  stroke-width: 3;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.grid {
+  stroke: #3f3f46;
+  stroke-width: 1;
+}
+.selected-band {
+  fill: #818cf8;
+  opacity: 0.12;
+}
+.selected-point {
+  stroke: #fff;
+  stroke-width: 2;
+}
+
+.chart-target {
+  position: absolute;
+  top: 0;
+  bottom: 1.5rem;
+  width: 2.5rem;
+  transform: translateX(-50%);
+  border: 0;
+  border-radius: 0.25rem;
+  background: transparent;
+  cursor: pointer;
+}
+
+.chart-target:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: -2px;
+}
+
+.tooltip {
+  position: absolute;
+  right: 0;
+  top: 0;
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.75rem;
+  border: 1px solid #52525b;
+  border-radius: 0.5rem;
+  background: #0e0e10;
+  color: #fff;
+  font-size: 0.8rem;
+}
+
+.empty-evolution {
+  margin: 1rem 0 0;
+  color: #a1a1aa;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -198,5 +319,15 @@ select {
 
   .cards {
     grid-template-columns: 1fr;
+  }
+
+  figcaption {
+    display: grid;
+  }
+  .evolution {
+    padding: 1rem;
+  }
+  svg text {
+    font-size: 10px;
   }
 }

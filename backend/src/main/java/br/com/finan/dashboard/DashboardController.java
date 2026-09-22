@@ -28,4 +28,9 @@ public class DashboardController {
     public ResponseEntity<DashboardComparisonResponse> comparison(@RequestParam int year, @RequestParam int month) {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(service.comparison(year, month));
     }
+
+    @GetMapping("/evolution")
+    public ResponseEntity<DashboardEvolutionResponse> evolution(@RequestParam int year, @RequestParam int month) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(service.evolution(year, month));
+    }
 }

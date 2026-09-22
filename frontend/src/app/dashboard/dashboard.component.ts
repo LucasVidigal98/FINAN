@@ -2,13 +2,15 @@ import { CurrencyPipe, DecimalPipe } from '@angular/common';
 import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { finalize, Subscription } from 'rxjs';
+import { finalize, forkJoin, Subscription } from 'rxjs';
 import { ComparisonMetrics, DashboardComparison } from './dashboard-comparison.model';
+import { DashboardEvolution, DashboardEvolutionPoint } from './dashboard-evolution.model';
 import { DashboardService } from './dashboard.service';
 
 type MetricKey = keyof ComparisonMetrics;
 type ComparisonDirection = 'increase' | 'decrease' | 'stable';
 type ComparisonTone = 'favorable' | 'warning' | 'neutral';
+type EvolutionKey = 'income' | 'expense' | 'investment';
 
 @Component({
   selector: 'app-dashboard',
@@ -53,6 +55,18 @@ export class DashboardComponent {
   readonly isLoading = signal(false);
   readonly errorMessage = signal('');
   readonly comparison = signal<DashboardComparison | undefined>(undefined);
+  readonly evolution = signal<DashboardEvolution | undefined>(undefined);
+  readonly activePoint = signal<number | undefined>(undefined);
+  readonly evolutionSeries: ReadonlyArray<{
+    key: EvolutionKey;
+    label: string;
+    color: string;
+    dash: string;
+  }> = [
+    { key: 'income', label: 'Receitas', color: '#4ade80', dash: '' },
+    { key: 'expense', label: 'Despesas', color: '#f87171', dash: '7 4' },
+    { key: 'investment', label: 'Investimentos', color: '#60a5fa', dash: '2 4' },
+  ];
   readonly cards = computed(() => {
     const comparison = this.comparison();
     return comparison
@@ -68,7 +82,7 @@ export class DashboardComponent {
   }
 
   loadSummary(): void {
-    const period = `${this.selectedYear}-${this.selectedMonth}`;
+    const period = `${this.selectedYear}-${String(this.selectedMonth).padStart(2, '0')}`;
     if (period === this.activePeriod && this.activeRequest && !this.activeRequest.closed) return;
 
     this.activeRequest?.unsubscribe();
@@ -77,9 +91,13 @@ export class DashboardComponent {
     this.isLoading.set(true);
     this.errorMessage.set('');
     this.comparison.set(undefined);
+    this.evolution.set(undefined);
+    this.activePoint.set(undefined);
 
-    const request = this.dashboardService
-      .getComparison(this.selectedYear, this.selectedMonth)
+    const request = forkJoin({
+      comparison: this.dashboardService.getComparison(this.selectedYear, this.selectedMonth),
+      evolution: this.dashboardService.getEvolution(this.selectedYear, this.selectedMonth),
+    })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .pipe(
         finalize(() => {
@@ -91,9 +109,13 @@ export class DashboardComponent {
       );
 
     this.activeRequest = request.subscribe({
-      next: (comparison) => {
+      next: ({ comparison, evolution }) => {
         if (this.requestId !== currentRequestId) return;
-        if (!this.isValidComparison(comparison)) {
+        if (
+          !this.isValidComparison(comparison) ||
+          !this.isValidEvolution(evolution, period) ||
+          comparison.currentPeriod !== evolution.endPeriod
+        ) {
           this.errorMessage.set('Não foi possível carregar a comparação. Tente novamente.');
           return;
         }
@@ -103,10 +125,12 @@ export class DashboardComponent {
         this.selectedYear = year;
         this.selectedMonth = month;
         this.comparison.set(comparison);
+        this.evolution.set(evolution);
       },
       error: () => {
         if (this.requestId !== currentRequestId) return;
         this.comparison.set(undefined);
+        this.evolution.set(undefined);
         this.errorMessage.set('Não foi possível carregar a comparação. Tente novamente.');
       },
     });
@@ -149,6 +173,66 @@ export class DashboardComponent {
     return `${this.months[Number(match[2]) - 1].toLowerCase()} de ${match[1]}`;
   }
 
+  monthLabel(period: string, long = false): string {
+    const [year, month] = period.split('-').map(Number);
+    return new Intl.DateTimeFormat('pt-BR', {
+      month: long ? 'long' : 'short',
+      ...(long ? { year: 'numeric' } : {}),
+    })
+      .format(new Date(year, month - 1, 1))
+      .replace('.', '');
+  }
+
+  linePoints(key: EvolutionKey): string {
+    const points = this.evolution()?.points ?? [];
+    const maximum = Math.max(
+      1,
+      ...points.flatMap((point) => this.evolutionSeries.map(({ key }) => point[key])),
+    );
+    return points
+      .map((point, index) => `${60 + index * 105},${210 - (point[key] / maximum) * 170}`)
+      .join(' ');
+  }
+
+  pointX(index: number): number {
+    return 60 + index * 105;
+  }
+
+  pointY(point: DashboardEvolutionPoint, key: EvolutionKey): number {
+    const points = this.evolution()?.points ?? [];
+    const maximum = Math.max(
+      1,
+      ...points.flatMap((item) => this.evolutionSeries.map(({ key }) => item[key])),
+    );
+    return 210 - (point[key] / maximum) * 170;
+  }
+
+  axisLabel(): string {
+    const points = this.evolution()?.points ?? [];
+    const maximum = Math.max(
+      0,
+      ...points.flatMap((point) => this.evolutionSeries.map(({ key }) => point[key])),
+    );
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      notation: 'compact',
+      maximumFractionDigits: 1,
+    }).format(maximum);
+  }
+
+  isEmptyEvolution(): boolean {
+    return (
+      this.evolution()?.points.every((point) =>
+        this.evolutionSeries.every(({ key }) => point[key] === 0),
+      ) ?? false
+    );
+  }
+
+  hideTooltip(event: KeyboardEvent): void {
+    if (event.key === 'Escape') this.activePoint.set(undefined);
+  }
+
   private isValidComparison(
     value: DashboardComparison | null | undefined,
   ): value is DashboardComparison {
@@ -170,6 +254,38 @@ export class DashboardComponent {
         (metric.percentageChange === null || this.isFiniteNumber(metric.percentageChange))
       );
     });
+  }
+
+  private isValidEvolution(
+    value: DashboardEvolution | null | undefined,
+    currentPeriod: string,
+  ): value is DashboardEvolution {
+    if (
+      !value ||
+      !this.isValidPeriod(value.startPeriod) ||
+      value.endPeriod !== currentPeriod ||
+      !Array.isArray(value.points) ||
+      value.points.length !== 6
+    )
+      return false;
+    return (
+      value.points.every((point, index) => {
+        const expected = this.periodAfter(value.startPeriod, index);
+        return (
+          point?.period === expected &&
+          this.isValidPeriod(point.period) &&
+          this.evolutionSeries.every(
+            ({ key }) => this.isFiniteNumber(point[key]) && point[key] >= 0,
+          )
+        );
+      }) && value.points[5].period === value.endPeriod
+    );
+  }
+
+  private periodAfter(period: string, months: number): string {
+    const [year, month] = period.split('-').map(Number);
+    const value = new Date(year, month - 1 + months, 1);
+    return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}`;
   }
 
   private isValidPeriod(period: string): boolean {

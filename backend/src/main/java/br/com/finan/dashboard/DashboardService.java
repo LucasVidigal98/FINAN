@@ -5,6 +5,7 @@ import java.math.RoundingMode;
 import java.time.DateTimeException;
 import java.time.YearMonth;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import br.com.finan.fixedentry.FixedEntryService;
 import br.com.finan.transaction.FinancialTransaction;
@@ -70,6 +71,24 @@ public class DashboardService {
                         compare(current.totalExpense(), previous.totalExpense()),
                         compare(current.availableBalance(), previous.availableBalance()),
                         compare(current.totalInvestment(), previous.totalInvestment())));
+    }
+
+    @Transactional
+    public DashboardEvolutionResponse evolution(int year, int month) {
+        if (year < 1 || year > 9999 || month < 1 || month > 12 || (year == 1 && month < 6)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid year or month");
+        }
+        YearMonth endPeriod = YearMonth.of(year, month);
+        YearMonth startPeriod = endPeriod.minusMonths(5);
+        List<DashboardEvolutionPoint> points = IntStream.range(0, 6)
+                .mapToObj(startPeriod::plusMonths)
+                .map(period -> {
+                    MonthlySummaryResponse summary = monthly(period.getYear(), period.getMonthValue());
+                    return new DashboardEvolutionPoint(period.toString(), summary.totalIncome(),
+                            summary.totalExpense(), summary.totalInvestment());
+                })
+                .toList();
+        return new DashboardEvolutionResponse(startPeriod.toString(), endPeriod.toString(), points);
     }
 
     private MetricComparison compare(BigDecimal current, BigDecimal previous) {

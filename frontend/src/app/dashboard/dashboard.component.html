@@ -27,7 +27,8 @@
 
 <section class="content" aria-label="Resumo financeiro do mês" [attr.aria-busy]="isLoading()">
   @if (isLoading()) {
-    <div class="state" role="status">Carregando comparação...</div>
+    <div class="state loading" role="status">Carregando resumo e evolução...</div>
+    <div class="chart-skeleton" aria-hidden="true"></div>
   } @else if (errorMessage()) {
     <div class="state error" role="alert">
       <p>{{ errorMessage() }}</p>
@@ -74,5 +75,110 @@
         </article>
       }
     </div>
+
+    @if (evolution(); as evolution) {
+      <figure
+        class="evolution"
+        aria-labelledby="evolution-title evolution-description"
+        (keydown)="hideTooltip($event)"
+      >
+        <figcaption>
+          <div>
+            <p class="label">Evolução mensal</p>
+            <h2 id="evolution-title">Receitas, despesas e investimentos</h2>
+          </div>
+          <div class="legend" aria-label="Legenda do gráfico">
+            @for (series of evolutionSeries; track series.key) {
+              <span
+                ><i
+                  [style.border-color]="series.color"
+                  [style.border-style]="series.dash ? 'dashed' : 'solid'"
+                ></i
+                >{{ series.label }}</span
+              >
+            }
+          </div>
+        </figcaption>
+        <p id="evolution-description" class="sr-only">
+          Evolução entre {{ monthLabel(evolution.startPeriod, true) }} e
+          {{ monthLabel(evolution.endPeriod, true) }}.
+        </p>
+        <div class="chart-shell">
+          <svg viewBox="0 0 600 250" role="img" aria-hidden="true" preserveAspectRatio="none">
+            <line x1="60" y1="40" x2="60" y2="210" class="grid"></line>
+            <line x1="60" y1="210" x2="585" y2="210" class="grid"></line>
+            <text x="4" y="44">{{ axisLabel() }}</text>
+            <text x="38" y="214">R$ 0</text>
+            <rect
+              [attr.x]="pointX(5) - 42"
+              y="30"
+              width="84"
+              height="185"
+              class="selected-band"
+            ></rect>
+            @for (series of evolutionSeries; track series.key) {
+              <polyline
+                fill="none"
+                [attr.stroke]="series.color"
+                [attr.stroke-dasharray]="series.dash"
+                [attr.points]="linePoints(series.key)"
+              ></polyline>
+              @for (point of evolution.points; track point.period; let index = $index) {
+                <circle
+                  [attr.cx]="pointX(index)"
+                  [attr.cy]="pointY(point, series.key)"
+                  r="4"
+                  [attr.fill]="series.color"
+                  [class.selected-point]="index === 5"
+                ></circle>
+              }
+            }
+            @for (point of evolution.points; track point.period; let index = $index) {
+              <text [attr.x]="pointX(index)" y="238" text-anchor="middle">
+                {{ monthLabel(point.period) }}
+              </text>
+            }
+          </svg>
+          @for (point of evolution.points; track point.period; let index = $index) {
+            <button
+              class="chart-target"
+              type="button"
+              [style.left.%]="10 + index * 17.5"
+              [attr.aria-label]="monthLabel(point.period, true)"
+              (mouseenter)="activePoint.set(index)"
+              (focus)="activePoint.set(index)"
+              (click)="activePoint.set(index)"
+            ></button>
+          }
+          @if (activePoint() !== undefined) {
+            <div class="tooltip" role="status">
+              <strong>{{ monthLabel(evolution.points[activePoint()!].period, true) }}</strong>
+              @for (series of evolutionSeries; track series.key) {
+                <span
+                  >{{ series.label }}:
+                  {{
+                    evolution.points[activePoint()!][series.key]
+                      | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
+                  }}</span
+                >
+              }
+            </div>
+          }
+        </div>
+        @if (isEmptyEvolution()) {
+          <p class="empty-evolution">Nenhuma movimentação neste período</p>
+        }
+        <ul class="sr-only">
+          @for (point of evolution.points; track point.period) {
+            <li>
+              {{ monthLabel(point.period, true) }}: Receitas
+              {{ point.income | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}, Despesas
+              {{ point.expense | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}, Investimentos
+              {{ point.investment | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}.
+            </li>
+          }
+        </ul>
+      </figure>
+    }
   }
 </section>

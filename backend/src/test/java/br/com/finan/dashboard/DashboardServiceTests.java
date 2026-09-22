@@ -141,6 +141,38 @@ class DashboardServiceTests {
         verifyNoInteractions(repository, fixedEntryService);
     }
 
+    @Test
+    void returnsSixMonthlyTotalsInChronologicalOrderAcrossTheYearBoundary() {
+        YearMonth august = YearMonth.of(2025, 8);
+        YearMonth january = YearMonth.of(2026, 1);
+        stubTransactions(Map.of(
+                august, List.of(transaction("100", august, TransactionType.INCOME)),
+                january, List.of(transaction("40", january, TransactionType.EXPENSE),
+                        transaction("20", january, TransactionType.INVESTMENT))));
+
+        DashboardEvolutionResponse response = service.evolution(2026, 1);
+
+        assertThat(response.startPeriod()).isEqualTo("2025-08");
+        assertThat(response.endPeriod()).isEqualTo("2026-01");
+        assertThat(response.points()).extracting(DashboardEvolutionPoint::period)
+                .containsExactly("2025-08", "2025-09", "2025-10", "2025-11", "2025-12", "2026-01");
+        assertThat(response.points().getFirst().income()).isEqualByComparingTo("100");
+        assertThat(response.points().get(1).income()).isZero();
+        assertThat(response.points().get(5).expense()).isEqualByComparingTo("40");
+        assertThat(response.points().get(5).investment()).isEqualByComparingTo("20");
+        verify(fixedEntryService).materialize(YearMonth.of(2025, 8));
+        verify(fixedEntryService).materialize(january);
+    }
+
+    @Test
+    void rejectsIntervalsBeforeYearOneBeforeMaterializingAnyMonth() {
+        assertThatThrownBy(() -> service.evolution(1, 5))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("400 BAD_REQUEST");
+
+        verifyNoInteractions(repository, fixedEntryService);
+    }
+
     private void stubTransactions(Map<YearMonth, List<FinancialTransaction>> transactions) {
         when(repository.findAllByOccurredOnBetween(any(LocalDate.class), any(LocalDate.class)))
                 .thenAnswer(invocation -> transactions.getOrDefault(

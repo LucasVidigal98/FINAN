@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { DashboardComparison } from './dashboard-comparison.model';
+import { DashboardEvolution } from './dashboard-evolution.model';
 import { DashboardService } from './dashboard.service';
 
 describe('DashboardService', () => {
@@ -64,5 +65,29 @@ describe('DashboardService', () => {
     request.flush('Unavailable', { status: 503, statusText: 'Service Unavailable' });
 
     expect(error).toMatchObject({ status: 503 });
+  });
+
+  it('gets the six-point evolution for the selected period', () => {
+    const response: DashboardEvolution = {
+      startPeriod: '2026-04',
+      endPeriod: '2026-09',
+      points: Array.from({ length: 6 }, (_, index) => ({
+        period: `2026-${String(index + 4).padStart(2, '0')}`,
+        income: 0,
+        expense: 0,
+        investment: 0,
+      })),
+    };
+    let actual: DashboardEvolution | undefined;
+
+    service.getEvolution(2026, 9).subscribe((evolution) => (actual = evolution));
+
+    const request = http.expectOne(
+      'http://localhost:8080/api/dashboard/evolution?year=2026&month=9',
+    );
+    expect(request.request.method).toBe('GET');
+    request.flush(response);
+
+    expect(actual).toEqual(response);
   });
 });
