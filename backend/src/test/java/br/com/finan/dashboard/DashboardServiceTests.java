@@ -5,8 +5,11 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Stream;
 
+import br.com.finan.category.Category;
+import br.com.finan.fixedentry.FixedEntry;
 import br.com.finan.fixedentry.FixedEntryService;
 import br.com.finan.transaction.FinancialTransaction;
 import br.com.finan.transaction.FinancialTransactionRepository;
@@ -15,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -173,6 +177,63 @@ class DashboardServiceTests {
         verifyNoInteractions(repository, fixedEntryService);
     }
 
+    @Test
+    void distributesExpensesByCategoryIdentityWithStableOrderingAndRoundedPercentages() {
+        YearMonth period = YearMonth.of(2026, 9);
+        Category zCategory = category("Z categoria", "00000000-0000-0000-0000-000000000003");
+        Category mercado2 = category("Mercado", "00000000-0000-0000-0000-000000000002");
+        Category mercado1 = category("Mercado", "00000000-0000-0000-0000-000000000001");
+        FixedEntry inactive = mock(FixedEntry.class);
+        when(inactive.isActive()).thenReturn(false);
+        when(repository.findAllByOccurredOnBetween(any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(List.of(
+                        expense("4", period, zCategory),
+                        expense("0.40", period, mercado1),
+                        expense("0.60", period, mercado1),
+                        expense("1", period, mercado2),
+                        expense("1", period, null),
+                        transaction("100", period, TransactionType.EXPENSE, inactive),
+                        transaction("500", period, TransactionType.INCOME),
+                        transaction("600", period, TransactionType.INVESTMENT)));
+
+        ExpenseDistributionResponse response = service.expenseDistribution(2026, 9);
+
+        assertThat(response.period()).isEqualTo("2026-09");
+        assertThat(response.totalExpense()).isEqualByComparingTo("7");
+        assertThat(response.categories()).extracting(ExpenseCategoryDistribution::categoryId)
+                .containsExactly(zCategory.getId(), mercado1.getId(), mercado2.getId(), null);
+        assertThat(response.categories()).extracting(ExpenseCategoryDistribution::categoryName)
+                .containsExactly("Z categoria", "Mercado", "Mercado", "Sem categoria");
+        assertThat(response.categories()).extracting(ExpenseCategoryDistribution::amount)
+                .containsExactly(new BigDecimal("4"), new BigDecimal("1.00"),
+                        new BigDecimal("1"), new BigDecimal("1"));
+        assertThat(response.categories()).extracting(ExpenseCategoryDistribution::percentage)
+                .containsExactly(new BigDecimal("57.14"), new BigDecimal("14.29"),
+                        new BigDecimal("14.29"), new BigDecimal("14.29"));
+        verify(fixedEntryService).materialize(period);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"0,9", "10000,9", "2026,0", "2026,13"})
+    void rejectsInvalidExpenseDistributionPeriodBeforeMaterializing(int year, int month) {
+        assertThatThrownBy(() -> service.expenseDistribution(year, month))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("400 BAD_REQUEST");
+
+        verifyNoInteractions(repository, fixedEntryService);
+    }
+
+    @Test
+    void returnsAnEmptyDistributionWhenTheMonthHasNoExpenses() {
+        when(repository.findAllByOccurredOnBetween(any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(List.of(transaction("50", YearMonth.of(2026, 9), TransactionType.INCOME)));
+
+        ExpenseDistributionResponse response = service.expenseDistribution(2026, 9);
+
+        assertThat(response.totalExpense()).isZero();
+        assertThat(response.categories()).isEmpty();
+    }
+
     private void stubTransactions(Map<YearMonth, List<FinancialTransaction>> transactions) {
         when(repository.findAllByOccurredOnBetween(any(LocalDate.class), any(LocalDate.class)))
                 .thenAnswer(invocation -> transactions.getOrDefault(
@@ -181,6 +242,26 @@ class DashboardServiceTests {
 
     private FinancialTransaction transaction(String amount, YearMonth month, TransactionType type) {
         return new FinancialTransaction(type.name(), new BigDecimal(amount), month.atDay(1), type);
+    }
+
+    private FinancialTransaction transaction(String amount, YearMonth month, TransactionType type,
+            FixedEntry fixedEntry) {
+        FinancialTransaction transaction = transaction(amount, month, type);
+        transaction.setFixedEntry(fixedEntry);
+        return transaction;
+    }
+
+    private FinancialTransaction expense(String amount, YearMonth month, Category category) {
+        FinancialTransaction transaction = transaction(amount, month, TransactionType.EXPENSE);
+        transaction.setCategory(category);
+        return transaction;
+    }
+
+    private Category category(String name, String id) {
+        Category category = mock(Category.class);
+        when(category.getId()).thenReturn(UUID.fromString(id));
+        when(category.getName()).thenReturn(name);
+        return category;
     }
 
     private void assertMetric(MetricComparison metric, String current, String previous,

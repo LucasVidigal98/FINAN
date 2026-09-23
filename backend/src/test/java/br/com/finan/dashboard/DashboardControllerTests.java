@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.Clock;
 import java.time.YearMonth;
+import java.util.UUID;
 
 import br.com.finan.category.Category;
 import br.com.finan.category.CategoryRepository;
@@ -169,6 +170,12 @@ class DashboardControllerTests {
                 .param("month", Integer.toString(month))).andExpect(status().isOk());
     }
 
+    private org.springframework.test.web.servlet.ResultActions distribution(LocalDate month) throws Exception {
+        return mvc.perform(get("/api/dashboard/expense-distribution")
+                .param("year", Integer.toString(month.getYear()))
+                .param("month", Integer.toString(month.getMonthValue()))).andExpect(status().isOk());
+    }
+
     @Test
     void calculatesMonthlySummary() throws Exception {
         save("Salario", "8500.00", LocalDate.of(2026, 9, 1), TransactionType.INCOME);
@@ -210,6 +217,66 @@ class DashboardControllerTests {
                 .andExpect(jsonPath("$.transactionCount").value(0));
     }
 
+    @Test
+    void distributesCurrentMonthExpensesAndMatchesMonthlyTotalWithActiveAndInactiveFixedEntries()
+            throws Exception {
+        LocalDate currentMonth = LocalDate.now(clock).withDayOfMonth(1);
+        String testId = UUID.randomUUID().toString();
+        String firstName = "Mercado A " + testId;
+        String secondName = "Mercado B " + testId;
+        Category firstMarket = categories.saveAndFlush(new Category(firstName, TransactionType.EXPENSE, null));
+        Category secondMarket = categories.saveAndFlush(new Category(secondName, TransactionType.EXPENSE, null));
+        save("Compra A", "20", currentMonth, TransactionType.EXPENSE, firstMarket);
+        save("Compra B", "30", currentMonth, TransactionType.EXPENSE, secondMarket);
+        save("Sem categoria", "10", currentMonth, TransactionType.EXPENSE);
+        save("Salário", "200", currentMonth, TransactionType.INCOME);
+        save("Investimento", "300", currentMonth, TransactionType.INVESTMENT);
+        save("Mês anterior", "900", currentMonth.minusMonths(1), TransactionType.EXPENSE, firstMarket);
+        save("Mês seguinte", "900", currentMonth.plusMonths(1), TransactionType.EXPENSE, firstMarket);
+        fixedEntries.saveAndFlush(new FixedEntry("Fixo ativo", new BigDecimal("40"),
+                TransactionType.EXPENSE, firstMarket, currentMonth, currentMonth));
+        FixedEntry becomesInactive = fixedEntries.saveAndFlush(new FixedEntry("Fixo inativado",
+                new BigDecimal("50"), TransactionType.EXPENSE, secondMarket, currentMonth, currentMonth));
+
+        distribution(currentMonth).andExpect(header().string("Cache-Control", "no-store"))
+                .andExpect(jsonPath("$.period").value(YearMonth.from(currentMonth).toString()))
+                .andExpect(jsonPath("$.totalExpense").value(150))
+                .andExpect(jsonPath("$.categories.length()").value(3))
+                .andExpect(jsonPath("$.categories[0].categoryId").value(secondMarket.getId().toString()))
+                .andExpect(jsonPath("$.categories[0].categoryName").value(secondName))
+                .andExpect(jsonPath("$.categories[0].amount").value(80))
+                .andExpect(jsonPath("$.categories[0].percentage").value(53.33))
+                .andExpect(jsonPath("$.categories[1].categoryId").value(firstMarket.getId().toString()))
+                .andExpect(jsonPath("$.categories[1].categoryName").value(firstName))
+                .andExpect(jsonPath("$.categories[1].amount").value(60))
+                .andExpect(jsonPath("$.categories[1].percentage").value(40))
+                .andExpect(jsonPath("$.categories[2].categoryId").value(nullValue()))
+                .andExpect(jsonPath("$.categories[2].categoryName").value("Sem categoria"))
+                .andExpect(jsonPath("$.categories[2].amount").value(10))
+                .andExpect(jsonPath("$.categories[2].percentage").value(6.67));
+
+        becomesInactive.deactivate();
+        fixedEntries.flush();
+        distribution(currentMonth).andExpect(jsonPath("$.totalExpense").value(100))
+                .andExpect(jsonPath("$.categories[0].categoryId").value(firstMarket.getId().toString()))
+                .andExpect(jsonPath("$.categories[1].categoryId").value(secondMarket.getId().toString()));
+        mvc.perform(get("/api/dashboard/monthly")
+                        .param("year", Integer.toString(currentMonth.getYear()))
+                        .param("month", Integer.toString(currentMonth.getMonthValue())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalExpense").value(100));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"0,9", "10000,9", "2026,0", "2026,13"})
+    void rejectsInvalidDistributionPeriodBeforeMaterializingFixedEntries(String year, String month)
+            throws Exception {
+        createFixedEntry(LocalDate.of(1, 1, 1), LocalDate.of(1, 1, 1));
+        mvc.perform(get("/api/dashboard/expense-distribution").param("year", year).param("month", month))
+                .andExpect(status().isBadRequest());
+        assertThat(repository.count()).isZero();
+    }
+
     @ParameterizedTest
     @ValueSource(ints = {0, 13})
     void rejectsInvalidMonth(int month) throws Exception {
@@ -226,5 +293,13 @@ class DashboardControllerTests {
 
     private void save(String description, String amount, LocalDate occurredOn, TransactionType type) {
         repository.save(new FinancialTransaction(description, new BigDecimal(amount), occurredOn, type));
+    }
+
+    private void save(String description, String amount, LocalDate occurredOn, TransactionType type,
+            Category category) {
+        FinancialTransaction transaction = new FinancialTransaction(description, new BigDecimal(amount),
+                occurredOn, type);
+        transaction.setCategory(category);
+        repository.save(transaction);
     }
 }

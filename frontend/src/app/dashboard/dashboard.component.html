@@ -27,8 +27,13 @@
 
 <section class="content" aria-label="Resumo financeiro do mês" [attr.aria-busy]="isLoading()">
   @if (isLoading()) {
-    <div class="state loading" role="status">Carregando resumo e evolução...</div>
-    <div class="chart-skeleton" aria-hidden="true"></div>
+    <div class="state loading" role="status">
+      Carregando resumo, evolução e despesas por categoria...
+    </div>
+    <div class="loading-charts" aria-hidden="true">
+      <div class="chart-skeleton distribution-skeleton"></div>
+      <div class="chart-skeleton evolution-skeleton"></div>
+    </div>
   } @else if (errorMessage()) {
     <div class="state error" role="alert">
       <p>{{ errorMessage() }}</p>
@@ -75,6 +80,107 @@
         </article>
       }
     </div>
+
+    @if (expenseDistribution(); as distribution) {
+      <figure
+        class="expense-distribution"
+        aria-labelledby="distribution-title distribution-description"
+        (keydown)="hideTooltip($event)"
+      >
+        <figcaption>
+          <div>
+            <p class="label">Despesas do período</p>
+            <h2 id="distribution-title">Despesas por categoria</h2>
+          </div>
+          <strong class="distribution-total">
+            {{ distribution.totalExpense | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}
+          </strong>
+        </figcaption>
+        <p id="distribution-description" class="sr-only">
+          Despesas de {{ monthLabel(distribution.period, true) }}, distribuídas por categoria.
+        </p>
+
+        @if (distribution.categories.length === 0) {
+          <p class="empty-distribution">Nenhuma despesa neste mês</p>
+        } @else {
+          <div class="distribution-body">
+            <div class="donut-shell">
+              <svg
+                class="donut-chart"
+                viewBox="0 0 240 240"
+                role="group"
+                aria-label="Gráfico de rosca interativo. Use Tab para percorrer as categorias."
+              >
+                @for (slice of expenseSlices(); track slice.index) {
+                  <path
+                    [attr.d]="slice.path"
+                    [attr.fill]="slice.color"
+                    stroke="#18181c"
+                    stroke-width="2"
+                    stroke-linejoin="round"
+                    role="button"
+                    tabindex="0"
+                    [attr.aria-label]="
+                      slice.category.categoryName +
+                      ': ' +
+                      (slice.category.amount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR') +
+                      ', ' +
+                      (slice.category.percentage | number: '1.2-2' : 'pt-BR') +
+                      '%'
+                    "
+                    (pointerenter)="activeExpenseCategory.set(slice.index)"
+                    (pointerleave)="hideExpenseTooltip($event)"
+                    (focus)="activeExpenseCategory.set(slice.index)"
+                    (blur)="activeExpenseCategory.set(undefined)"
+                    (click)="activeExpenseCategory.set(slice.index)"
+                  ></path>
+                }
+                <circle cx="120" cy="120" r="58" fill="#18181c" aria-hidden="true"></circle>
+                <text x="120" y="114" text-anchor="middle" aria-hidden="true">Despesas</text>
+                <text class="donut-total" x="120" y="138" text-anchor="middle" aria-hidden="true">
+                  {{ distribution.totalExpense | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}
+                </text>
+              </svg>
+              @if (activeExpenseItem(); as category) {
+                <div class="tooltip distribution-tooltip" role="status" aria-live="polite">
+                  <strong>{{ category.categoryName }}</strong>
+                  <span>
+                    {{ category.amount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}
+                    · {{ category.percentage | number: '1.2-2' : 'pt-BR' }}%
+                  </span>
+                </div>
+              }
+            </div>
+
+            <ul class="distribution-list" aria-label="Legenda de despesas por categoria">
+              @for (slice of expenseSlices(); track slice.index) {
+                <li class="distribution-item">
+                  <span
+                    class="distribution-swatch"
+                    [style.background-color]="slice.color"
+                    aria-hidden="true"
+                  ></span>
+                  <span class="distribution-name">{{ slice.category.categoryName }}</span>
+                  <strong>
+                    {{ slice.category.amount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}
+                    <small>{{ slice.category.percentage | number: '1.2-2' : 'pt-BR' }}%</small>
+                  </strong>
+                </li>
+              }
+            </ul>
+          </div>
+          <ul class="sr-only">
+            @for (category of distribution.categories; track $index) {
+              <li>
+                {{ monthLabel(distribution.period, true) }}: {{ category.categoryName }},
+                {{ category.amount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }},
+                {{ category.percentage | number: '1.2-2' : 'pt-BR' }}%.
+              </li>
+            }
+          </ul>
+        }
+      </figure>
+    }
 
     @if (evolution(); as evolution) {
       <figure

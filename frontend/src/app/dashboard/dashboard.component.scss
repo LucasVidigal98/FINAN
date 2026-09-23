@@ -163,11 +163,18 @@ select {
 }
 
 .chart-skeleton,
-.evolution {
+.evolution,
+.expense-distribution {
   margin-top: 1rem;
   border: 1px solid #27272a;
   border-radius: 1rem;
   background: #18181c;
+}
+
+.loading-charts {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: 1rem;
 }
 
 .chart-skeleton {
@@ -175,8 +182,105 @@ select {
   background: linear-gradient(100deg, #18181c 20%, #27272a 50%, #18181c 80%);
 }
 
+.distribution-skeleton {
+  height: 17rem;
+}
+
 .evolution {
   padding: 1.5rem;
+}
+
+.expense-distribution {
+  padding: 1.5rem;
+}
+
+.distribution-total {
+  font-size: 1.25rem;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.distribution-body {
+  display: grid;
+  grid-template-columns: minmax(12rem, 0.85fr) minmax(0, 1.15fr);
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.donut-shell {
+  position: relative;
+  width: min(100%, 18rem);
+  margin-inline: auto;
+}
+
+.donut-chart {
+  min-height: 0;
+  max-height: 18rem;
+  touch-action: manipulation;
+}
+
+.donut-chart path {
+  cursor: pointer;
+}
+
+.donut-chart path:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+
+.donut-chart .donut-total {
+  fill: #fff;
+  font-size: 14px;
+}
+
+.distribution-list {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.distribution-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem;
+  color: #e4e4e7;
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+
+  strong {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  small {
+    display: block;
+    color: #a1a1aa;
+    font-size: 0.75rem;
+    font-weight: 400;
+  }
+}
+
+.distribution-swatch {
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 50%;
+}
+
+.distribution-tooltip {
+  right: auto;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.empty-distribution {
+  margin: 1.5rem 0 0;
+  color: #a1a1aa;
 }
 
 figcaption {
@@ -321,13 +425,29 @@ polyline {
     grid-template-columns: 1fr;
   }
 
+  .loading-charts,
+  .distribution-body {
+    grid-template-columns: 1fr;
+  }
+
+  .distribution-body {
+    gap: 1rem;
+  }
+
   figcaption {
     display: grid;
   }
-  .evolution {
+
+  .evolution,
+  .expense-distribution {
     padding: 1rem;
   }
+
   svg text {
     font-size: 10px;
+  }
+
+  .donut-chart .donut-total {
+    font-size: 14px;
   }
 }

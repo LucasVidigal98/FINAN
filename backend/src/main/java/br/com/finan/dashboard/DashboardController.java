@@ -24,6 +24,13 @@ public class DashboardController {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(service.monthly(year, month));
     }
 
+    @GetMapping("/expense-distribution")
+    public ResponseEntity<ExpenseDistributionResponse> expenseDistribution(@RequestParam int year,
+            @RequestParam int month) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(service.expenseDistribution(year, month));
+    }
+
     @GetMapping("/comparison")
     public ResponseEntity<DashboardComparisonResponse> comparison(@RequestParam int year, @RequestParam int month) {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(service.comparison(year, month));

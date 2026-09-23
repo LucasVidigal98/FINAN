@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { DashboardComparison } from './dashboard-comparison.model';
 import { DashboardEvolution } from './dashboard-evolution.model';
+import { ExpenseDistribution } from './expense-distribution.model';
 import { DashboardService } from './dashboard.service';
 
 describe('DashboardService', () => {
@@ -89,5 +90,47 @@ describe('DashboardService', () => {
     request.flush(response);
 
     expect(actual).toEqual(response);
+  });
+
+  it('gets the typed expense distribution for the selected period', () => {
+    const response: ExpenseDistribution = {
+      period: '2026-09',
+      totalExpense: 750,
+      categories: [
+        {
+          categoryId: '11111111-1111-4111-8111-111111111111',
+          categoryName: 'Mercado',
+          amount: 600,
+          percentage: 80,
+        },
+        { categoryId: null, categoryName: 'Sem categoria', amount: 150, percentage: 20 },
+      ],
+    };
+    let actual: ExpenseDistribution | undefined;
+
+    service.getExpenseDistribution(2026, 9).subscribe((distribution) => (actual = distribution));
+
+    const request = http.expectOne(
+      'http://localhost:8080/api/dashboard/expense-distribution?year=2026&month=9',
+    );
+    expect(request.request.method).toBe('GET');
+    request.flush(response);
+
+    expect(actual).toEqual(response);
+  });
+
+  it('propagates expense distribution request errors', () => {
+    let error: unknown;
+
+    service
+      .getExpenseDistribution(2026, 9)
+      .subscribe({ error: (responseError) => (error = responseError) });
+
+    const request = http.expectOne(
+      'http://localhost:8080/api/dashboard/expense-distribution?year=2026&month=9',
+    );
+    request.flush('Unavailable', { status: 503, statusText: 'Service Unavailable' });
+
+    expect(error).toMatchObject({ status: 503 });
   });
 });

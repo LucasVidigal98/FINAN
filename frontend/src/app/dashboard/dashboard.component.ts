@@ -1,16 +1,25 @@
 import { CurrencyPipe, DecimalPipe } from '@angular/common';
 import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { finalize, forkJoin, Subscription } from 'rxjs';
+import { finalize, forkJoin, retry, Subscription, throwError, timer } from 'rxjs';
 import { ComparisonMetrics, DashboardComparison } from './dashboard-comparison.model';
 import { DashboardEvolution, DashboardEvolutionPoint } from './dashboard-evolution.model';
 import { DashboardService } from './dashboard.service';
+import { ExpenseDistribution, ExpenseDistributionCategory } from './expense-distribution.model';
 
 type MetricKey = keyof ComparisonMetrics;
 type ComparisonDirection = 'increase' | 'decrease' | 'stable';
 type ComparisonTone = 'favorable' | 'warning' | 'neutral';
 type EvolutionKey = 'income' | 'expense' | 'investment';
+
+interface ExpenseSlice {
+  index: number;
+  category: ExpenseDistributionCategory;
+  color: string;
+  path: string;
+}
 
 @Component({
   selector: 'app-dashboard',
@@ -56,7 +65,51 @@ export class DashboardComponent {
   readonly errorMessage = signal('');
   readonly comparison = signal<DashboardComparison | undefined>(undefined);
   readonly evolution = signal<DashboardEvolution | undefined>(undefined);
+  readonly expenseDistribution = signal<ExpenseDistribution | undefined>(undefined);
   readonly activePoint = signal<number | undefined>(undefined);
+  readonly activeExpenseCategory = signal<number | undefined>(undefined);
+  readonly expenseSlices = computed(() => {
+    const distribution = this.expenseDistribution();
+    if (!distribution || distribution.totalExpense <= 0 || !distribution.categories.length)
+      return [];
+
+    const percentageTotal = distribution.categories.reduce(
+      (total, category) => total + category.percentage,
+      0,
+    );
+    const total = percentageTotal || distribution.totalExpense;
+    let angle = -Math.PI / 2;
+    const colors = [
+      '#818cf8',
+      '#f472b6',
+      '#4ade80',
+      '#60a5fa',
+      '#fbbf24',
+      '#a78bfa',
+      '#2dd4bf',
+      '#fb7185',
+    ];
+
+    return distribution.categories.map((category, index) => {
+      const portion = percentageTotal ? category.percentage / total : category.amount / total;
+      const end =
+        index === distribution.categories.length - 1
+          ? -Math.PI / 2 + 2 * Math.PI
+          : angle + 2 * Math.PI * portion;
+      const slice = {
+        index,
+        category,
+        color: colors[index % colors.length],
+        path: this.sectorPath(angle, end),
+      };
+      angle = end;
+      return slice;
+    });
+  });
+  readonly activeExpenseItem = computed(() => {
+    const index = this.activeExpenseCategory();
+    return index === undefined ? undefined : this.expenseDistribution()?.categories[index];
+  });
   readonly evolutionSeries: ReadonlyArray<{
     key: EvolutionKey;
     label: string;
@@ -82,7 +135,9 @@ export class DashboardComponent {
   }
 
   loadSummary(): void {
-    const period = `${this.selectedYear}-${String(this.selectedMonth).padStart(2, '0')}`;
+    const year = this.selectedYear;
+    const month = this.selectedMonth;
+    const period = `${year}-${String(month).padStart(2, '0')}`;
     if (period === this.activePeriod && this.activeRequest && !this.activeRequest.closed) return;
 
     this.activeRequest?.unsubscribe();
@@ -92,13 +147,25 @@ export class DashboardComponent {
     this.errorMessage.set('');
     this.comparison.set(undefined);
     this.evolution.set(undefined);
+    this.expenseDistribution.set(undefined);
     this.activePoint.set(undefined);
+    this.activeExpenseCategory.set(undefined);
 
     const request = forkJoin({
-      comparison: this.dashboardService.getComparison(this.selectedYear, this.selectedMonth),
-      evolution: this.dashboardService.getEvolution(this.selectedYear, this.selectedMonth),
+      comparison: this.dashboardService.getComparison(year, month),
+      evolution: this.dashboardService.getEvolution(year, month),
+      expenseDistribution: this.dashboardService.getExpenseDistribution(year, month),
     })
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(
+        retry({
+          count: 12,
+          delay: (error: unknown) =>
+            error instanceof HttpErrorResponse && error.status === 0
+              ? timer(5000)
+              : throwError(() => error),
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
       .pipe(
         finalize(() => {
           if (this.requestId !== currentRequestId) return;
@@ -109,29 +176,34 @@ export class DashboardComponent {
       );
 
     this.activeRequest = request.subscribe({
-      next: ({ comparison, evolution }) => {
+      next: ({ comparison, evolution, expenseDistribution }) => {
         if (this.requestId !== currentRequestId) return;
         if (
           !this.isValidComparison(comparison) ||
           !this.isValidEvolution(evolution, period) ||
-          comparison.currentPeriod !== evolution.endPeriod
+          comparison.currentPeriod !== period ||
+          comparison.currentPeriod !== evolution.endPeriod ||
+          !this.isValidExpenseDistribution(expenseDistribution, period) ||
+          !this.isClose(
+            expenseDistribution.totalExpense,
+            comparison.metrics.expense.current,
+            expenseDistribution.categories.length,
+          )
         ) {
-          this.errorMessage.set('Não foi possível carregar a comparação. Tente novamente.');
+          this.errorMessage.set('Não foi possível carregar o resumo do período. Tente novamente.');
           return;
         }
 
-        const [year, month] = comparison.currentPeriod.split('-').map(Number);
-        if (!this.years.includes(year)) this.years = [...this.years, year].sort((a, b) => b - a);
-        this.selectedYear = year;
-        this.selectedMonth = month;
         this.comparison.set(comparison);
         this.evolution.set(evolution);
+        this.expenseDistribution.set(expenseDistribution);
       },
       error: () => {
         if (this.requestId !== currentRequestId) return;
         this.comparison.set(undefined);
         this.evolution.set(undefined);
-        this.errorMessage.set('Não foi possível carregar a comparação. Tente novamente.');
+        this.expenseDistribution.set(undefined);
+        this.errorMessage.set('Não foi possível carregar o resumo do período. Tente novamente.');
       },
     });
   }
@@ -230,7 +302,16 @@ export class DashboardComponent {
   }
 
   hideTooltip(event: KeyboardEvent): void {
-    if (event.key === 'Escape') this.activePoint.set(undefined);
+    if (event.key === 'Escape') {
+      this.activePoint.set(undefined);
+      this.activeExpenseCategory.set(undefined);
+    }
+  }
+
+  hideExpenseTooltip(event: PointerEvent): void {
+    if (event.pointerType === 'mouse' && event.target !== document.activeElement) {
+      this.activeExpenseCategory.set(undefined);
+    }
   }
 
   private isValidComparison(
@@ -280,6 +361,94 @@ export class DashboardComponent {
         );
       }) && value.points[5].period === value.endPeriod
     );
+  }
+
+  private isValidExpenseDistribution(
+    value: ExpenseDistribution | null | undefined,
+    currentPeriod: string,
+  ): value is ExpenseDistribution {
+    if (
+      !value ||
+      value.period !== currentPeriod ||
+      !this.isValidPeriod(value.period) ||
+      !this.isFiniteNumber(value.totalExpense) ||
+      value.totalExpense < 0 ||
+      !Array.isArray(value.categories) ||
+      (value.totalExpense === 0 ? value.categories.length !== 0 : value.categories.length === 0)
+    ) {
+      return false;
+    }
+
+    const identities = new Set<string>();
+    let total = 0;
+    let previous: ExpenseDistributionCategory | undefined;
+    for (const category of value.categories) {
+      if (
+        !category ||
+        (category.categoryId !== null &&
+          (typeof category.categoryId !== 'string' ||
+            !/^[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}$/i.test(category.categoryId))) ||
+        typeof category.categoryName !== 'string' ||
+        category.categoryName.trim() === '' ||
+        !this.isFiniteNumber(category.amount) ||
+        category.amount < 0 ||
+        !this.isFiniteNumber(category.percentage) ||
+        category.percentage < 0 ||
+        category.percentage > 100
+      ) {
+        return false;
+      }
+
+      const identity = category.categoryId?.toLowerCase() ?? 'uncategorized';
+      const expectedPercentage = (category.amount / value.totalExpense) * 100;
+      const roundedExpectedPercentage =
+        Math.round((expectedPercentage + Number.EPSILON * Math.max(1, expectedPercentage)) * 100) /
+        100;
+      if (
+        identities.has(identity) ||
+        !this.isClose(category.percentage, Math.round(category.percentage * 100) / 100) ||
+        !this.isClose(category.percentage, roundedExpectedPercentage) ||
+        (previous &&
+          (previous.amount < category.amount ||
+            (previous.amount === category.amount &&
+              (previous.categoryName > category.categoryName ||
+                (previous.categoryName === category.categoryName &&
+                  ((previous.categoryId === null && category.categoryId !== null) ||
+                    (previous.categoryId !== null &&
+                      category.categoryId !== null &&
+                      previous.categoryId > category.categoryId)))))))
+      ) {
+        return false;
+      }
+
+      identities.add(identity);
+      total += category.amount;
+      previous = category;
+    }
+
+    return this.isClose(total, value.totalExpense, value.categories.length);
+  }
+
+  private isClose(left: number, right: number, terms = 1): boolean {
+    return (
+      Math.abs(left - right) <=
+      Number.EPSILON * Math.max(1, Math.abs(left), Math.abs(right)) * Math.max(1, terms) * 4
+    );
+  }
+
+  private sectorPath(start: number, end: number): string {
+    const center = 120;
+    const radius = 84;
+    const point = (angle: number) =>
+      `${(center + radius * Math.cos(angle)).toFixed(3)} ${(center + radius * Math.sin(angle)).toFixed(3)}`;
+
+    if (end - start >= 2 * Math.PI - 0.000001) {
+      const middle = start + Math.PI;
+      return `M ${center} ${center - radius} A ${radius} ${radius} 0 1 1 ${point(middle)} A ${radius} ${radius} 0 1 1 ${center} ${center - radius} L ${center} ${center} Z`;
+    }
+
+    const largeArc = end - start > Math.PI ? 1 : 0;
+    return `M ${center} ${center} L ${point(start)} A ${radius} ${radius} 0 ${largeArc} 1 ${point(end)} Z`;
   }
 
   private periodAfter(period: string, months: number): string {
