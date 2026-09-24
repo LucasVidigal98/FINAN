@@ -27,9 +27,7 @@
 
 <section class="content" aria-label="Resumo financeiro do mês" [attr.aria-busy]="isLoading()">
   @if (isLoading()) {
-    <div class="state loading" role="status">
-      Carregando resumo, evolução e despesas por categoria...
-    </div>
+    <div class="state loading" role="status">Carregando resumo, gráficos e maiores despesas...</div>
     <div class="loading-charts" aria-hidden="true">
       <div class="chart-skeleton distribution-skeleton"></div>
       <div class="chart-skeleton evolution-skeleton"></div>
@@ -180,6 +178,36 @@
           </ul>
         }
       </figure>
+    }
+
+    @if (largestExpenses(); as largest) {
+      <section class="largest-expenses" aria-labelledby="largest-expenses-title">
+        <div>
+          <p class="label">Despesas do período</p>
+          <h2 id="largest-expenses-title">Maiores despesas</h2>
+          <p class="largest-period">{{ monthLabel(largest.period, true) }}</p>
+        </div>
+        @if (largest.expenses.length === 0) {
+          <p class="empty-distribution">Nenhuma despesa neste mês</p>
+        } @else {
+          <ol class="largest-list" role="list">
+            @for (expense of largest.expenses; track expense.id) {
+              <li>
+                <div>
+                  <strong>{{ expense.description }}</strong>
+                  <span
+                    >{{ expense.categoryName }} ·
+                    {{ expense.occurredOn | date: 'dd/MM/yyyy' }}</span
+                  >
+                </div>
+                <strong>{{
+                  expense.amount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR'
+                }}</strong>
+              </li>
+            }
+          </ol>
+        }
+      </section>
     }
 
     @if (evolution(); as evolution) {

@@ -31,6 +31,11 @@ public class DashboardController {
                 .body(service.expenseDistribution(year, month));
     }
 
+    @GetMapping("/largest-expenses")
+    public ResponseEntity<LargestExpensesResponse> largestExpenses(@RequestParam int year, @RequestParam int month) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(service.largestExpenses(year, month));
+    }
+
     @GetMapping("/comparison")
     public ResponseEntity<DashboardComparisonResponse> comparison(@RequestParam int year, @RequestParam int month) {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(service.comparison(year, month));

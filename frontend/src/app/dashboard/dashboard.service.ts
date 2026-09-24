@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { DashboardComparison } from './dashboard-comparison.model';
 import { DashboardEvolution } from './dashboard-evolution.model';
 import { ExpenseDistribution } from './expense-distribution.model';
+import { LargestExpenses } from './largest-expenses.model';
 import { MonthlySummary } from './monthly-summary.model';
 
 @Injectable({ providedIn: 'root' })
@@ -31,6 +32,12 @@ export class DashboardService {
 
   getExpenseDistribution(year: number, month: number): Observable<ExpenseDistribution> {
     return this.http.get<ExpenseDistribution>(`${this.apiUrl}/expense-distribution`, {
+      params: { year, month },
+    });
+  }
+
+  getLargestExpenses(year: number, month: number): Observable<LargestExpenses> {
+    return this.http.get<LargestExpenses>(`${this.apiUrl}/largest-expenses`, {
       params: { year, month },
     });
   }

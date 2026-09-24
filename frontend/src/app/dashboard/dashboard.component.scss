@@ -164,7 +164,8 @@ select {
 
 .chart-skeleton,
 .evolution,
-.expense-distribution {
+.expense-distribution,
+.largest-expenses {
   margin-top: 1rem;
   border: 1px solid #27272a;
   border-radius: 1rem;
@@ -192,6 +193,56 @@ select {
 
 .expense-distribution {
   padding: 1.5rem;
+}
+
+.largest-expenses {
+  padding: 1.5rem;
+
+  h2 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 500;
+  }
+}
+
+.largest-period {
+  margin: 0.5rem 0 0;
+  color: #a1a1aa;
+}
+
+.largest-list {
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.8rem 0;
+    border-top: 1px solid #27272a;
+  }
+
+  li > div {
+    display: grid;
+    gap: 0.25rem;
+    min-width: 0;
+  }
+
+  strong {
+    overflow-wrap: anywhere;
+  }
+
+  span {
+    color: #a1a1aa;
+    font-size: 0.85rem;
+  }
+
+  li > strong {
+    color: #f87171;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
 }
 
 .distribution-total {
@@ -439,8 +490,13 @@ polyline {
   }
 
   .evolution,
-  .expense-distribution {
+  .expense-distribution,
+  .largest-expenses {
     padding: 1rem;
+  }
+
+  .largest-list li {
+    flex-wrap: wrap;
   }
 
   svg text {

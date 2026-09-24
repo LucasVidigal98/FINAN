@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { DashboardComparison } from './dashboard-comparison.model';
 import { DashboardEvolution } from './dashboard-evolution.model';
 import { ExpenseDistribution } from './expense-distribution.model';
+import { LargestExpenses } from './largest-expenses.model';
 import { DashboardService } from './dashboard.service';
 
 describe('DashboardService', () => {
@@ -132,5 +133,17 @@ describe('DashboardService', () => {
     request.flush('Unavailable', { status: 503, statusText: 'Service Unavailable' });
 
     expect(error).toMatchObject({ status: 503 });
+  });
+
+  it('gets the largest expenses for the selected period', () => {
+    const response: LargestExpenses = { period: '2026-09', expenses: [] };
+    let actual: LargestExpenses | undefined;
+    service.getLargestExpenses(2026, 9).subscribe((value) => (actual = value));
+    const request = http.expectOne(
+      'http://localhost:8080/api/dashboard/largest-expenses?year=2026&month=9',
+    );
+    expect(request.request.method).toBe('GET');
+    request.flush(response);
+    expect(actual).toEqual(response);
   });
 });

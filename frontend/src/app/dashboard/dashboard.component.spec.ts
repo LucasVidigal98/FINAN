@@ -8,6 +8,7 @@ import { DashboardService } from './dashboard.service';
 import { DashboardComparison, MetricComparison } from './dashboard-comparison.model';
 import { DashboardEvolution } from './dashboard-evolution.model';
 import { ExpenseDistribution } from './expense-distribution.model';
+import { LargestExpenses } from './largest-expenses.model';
 
 registerLocaleData(localePt);
 
@@ -18,6 +19,7 @@ describe('DashboardComponent', () => {
     getComparison: vi.fn<(...args: number[]) => Observable<DashboardComparison>>(),
     getEvolution: vi.fn<(...args: number[]) => Observable<DashboardEvolution>>(),
     getExpenseDistribution: vi.fn<(...args: number[]) => Observable<ExpenseDistribution>>(),
+    getLargestExpenses: vi.fn<(...args: number[]) => Observable<LargestExpenses>>(),
     getMonthlySummary: vi.fn(),
   };
   const text = (element: Element = fixture.nativeElement): string =>
@@ -93,6 +95,20 @@ describe('DashboardComponent', () => {
     dashboardService.getExpenseDistribution
       .mockReset()
       .mockImplementation((year, month) => of(expenseDistribution(year, month)));
+    dashboardService.getLargestExpenses.mockReset().mockImplementation((year, month) =>
+      of({
+        period: `${year}-${String(month).padStart(2, '0')}`,
+        expenses: [
+          {
+            id: '11111111-1111-4111-8111-111111111111',
+            description: 'Aluguel',
+            amount: 2000,
+            occurredOn: `${year}-${String(month).padStart(2, '0')}-05`,
+            categoryName: 'Sem categoria',
+          },
+        ],
+      }),
+    );
     dashboardService.getMonthlySummary.mockReset();
     await TestBed.configureTestingModule({
       imports: [DashboardComponent],
@@ -112,6 +128,10 @@ describe('DashboardComponent', () => {
       today.getMonth() + 1,
     );
     expect(dashboardService.getExpenseDistribution).toHaveBeenCalledWith(
+      today.getFullYear(),
+      today.getMonth() + 1,
+    );
+    expect(dashboardService.getLargestExpenses).toHaveBeenCalledWith(
       today.getFullYear(),
       today.getMonth() + 1,
     );
@@ -141,6 +161,14 @@ describe('DashboardComponent', () => {
       'Sem categoria',
     );
     expect(fixture.nativeElement.querySelectorAll('.donut-chart path')).toHaveLength(2);
+    expect(text(fixture.nativeElement.querySelector('.largest-expenses')!)).toContain('Aluguel');
+    expect(text(fixture.nativeElement.querySelector('.largest-expenses')!)).toContain(
+      'R$ 2.000,00',
+    );
+    expect(text(fixture.nativeElement.querySelector('.largest-expenses')!)).toContain(
+      'Sem categoria',
+    );
+    expect(text(fixture.nativeElement.querySelector('.largest-expenses')!)).toContain('05/09/2026');
     expect(text()).not.toMatch(/NaN|Infinity|null|undefined|Saldo disponível|movimentações/);
   });
 
@@ -313,6 +341,66 @@ describe('DashboardComponent', () => {
     expect(fixture.nativeElement.querySelector('.donut-chart')).toBeNull();
     expect(fixture.nativeElement.querySelector('.distribution-list')).toBeNull();
     expect(fixture.nativeElement.querySelector('.evolution')).not.toBeNull();
+  });
+
+  it('shows an empty largest-expenses section', () => {
+    dashboardService.getLargestExpenses.mockReturnValueOnce(
+      of({ period: '2026-09', expenses: [] }),
+    );
+    render();
+    expect(text(fixture.nativeElement.querySelector('.largest-expenses')!)).toContain(
+      'Nenhuma despesa neste mês',
+    );
+    expect(cards()).toHaveLength(4);
+  });
+
+  it('clears largest expenses on period changes and ignores the old response', () => {
+    render();
+    const old = new Subject<LargestExpenses>();
+    const current = new Subject<LargestExpenses>();
+    dashboardService.getLargestExpenses.mockReturnValueOnce(old).mockReturnValueOnce(current);
+    const dashboard = fixture.componentInstance;
+    dashboard.selectedMonth = 1;
+    dashboard.loadSummary();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.largest-expenses')).toBeNull();
+    dashboard.selectedMonth = 2;
+    response = { ...response, currentPeriod: '2026-02', previousPeriod: '2026-01' };
+    dashboard.loadSummary();
+    expect(old.observed).toBe(false);
+    old.next({ period: '2026-01', expenses: [] });
+    old.complete();
+    expect(dashboard.isLoading()).toBe(true);
+    current.next({ period: '2026-02', expenses: [] });
+    current.complete();
+    fixture.detectChanges();
+    expect(text(fixture.nativeElement.querySelector('.largest-expenses')!)).toContain(
+      'fevereiro de 2026',
+    );
+  });
+
+  it('rejects invalid largest-expenses data and retries the selected period', () => {
+    dashboardService.getLargestExpenses.mockReturnValueOnce(
+      of({
+        period: '2026-09',
+        expenses: [
+          {
+            id: 'x',
+            description: 'Inválida',
+            amount: NaN,
+            occurredOn: '2026-09-05',
+            categoryName: 'Mercado',
+          },
+        ],
+      }),
+    );
+    render();
+    expect(fixture.nativeElement.querySelector('[role="alert"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.largest-expenses')).toBeNull();
+    fixture.nativeElement.querySelector('button').click();
+    fixture.detectChanges();
+    expect(dashboardService.getLargestExpenses).toHaveBeenCalledTimes(2);
+    expect(fixture.nativeElement.querySelector('.largest-expenses')).not.toBeNull();
   });
 
   it('offers category details to keyboard and touch users and dismisses them with Escape', () => {

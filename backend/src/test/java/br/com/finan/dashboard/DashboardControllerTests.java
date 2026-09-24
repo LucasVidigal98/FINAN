@@ -277,6 +277,22 @@ class DashboardControllerTests {
         assertThat(repository.count()).isZero();
     }
 
+    @Test
+    void returnsLargestExpensesWithCategoryFallbackAndNoStore() throws Exception {
+        LocalDate period = LocalDate.of(2026, 9, 5);
+        save("Receita", "999", period, TransactionType.INCOME);
+        save("Aluguel", "300", period, TransactionType.EXPENSE);
+        mvc.perform(get("/api/dashboard/largest-expenses").param("year", "2026").param("month", "9"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control", "no-store"))
+                .andExpect(jsonPath("$.period").value("2026-09"))
+                .andExpect(jsonPath("$.expenses.length()").value(1))
+                .andExpect(jsonPath("$.expenses[0].description").value("Aluguel"))
+                .andExpect(jsonPath("$.expenses[0].amount").value(300))
+                .andExpect(jsonPath("$.expenses[0].occurredOn").value("2026-09-05"))
+                .andExpect(jsonPath("$.expenses[0].categoryName").value("Sem categoria"));
+    }
+
     @ParameterizedTest
     @ValueSource(ints = {0, 13})
     void rejectsInvalidMonth(int month) throws Exception {
