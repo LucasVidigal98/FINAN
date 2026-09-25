@@ -1,14 +1,41 @@
-<header>
-  <a class="brand" routerLink="/dashboard">FINAN</a>
-  <nav aria-label="Navegação principal">
-    <a routerLink="/accounts" routerLinkActive="active">Contas</a>
-    <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
-    <a routerLink="/transactions" routerLinkActive="active">Transações</a>
-    <a routerLink="/categories" routerLinkActive="active">Categorias</a>
-    <a routerLink="/fixed-entries" routerLinkActive="active">Fixos</a>
-  </nav>
-</header>
+<div class="app-shell">
+  <aside class="sidebar" aria-label="Menu do sistema">
+    <a class="brand" routerLink="/dashboard" aria-label="FINAN, ir para o dashboard">
+      <span class="brand-mark" aria-hidden="true">◈</span>
+      <span>FINAN</span>
+    </a>
+    <div class="workspace-label">Seu espaço financeiro</div>
+    <nav aria-label="Navegação principal">
+      <p class="nav-heading">VISÃO GERAL</p>
+      <a routerLink="/dashboard" routerLinkActive="active"
+        ><span aria-hidden="true">▦</span> Dashboard</a
+      >
+      <a routerLink="/transactions" routerLinkActive="active"
+        ><span aria-hidden="true">⇄</span> Transações</a
+      >
+      <p class="nav-heading nav-heading-secondary">ORGANIZAÇÃO</p>
+      <a routerLink="/accounts" routerLinkActive="active"
+        ><span aria-hidden="true">▣</span> Contas</a
+      >
+      <a routerLink="/categories" routerLinkActive="active"
+        ><span aria-hidden="true">◈</span> Categorias</a
+      >
+      <a routerLink="/fixed-entries" routerLinkActive="active"
+        ><span aria-hidden="true">◇</span> Fixos</a
+      >
+    </nav>
+    <div class="sidebar-footer">
+      <span class="footer-dot" aria-hidden="true"></span> Seu dinheiro, em foco.
+    </div>
+  </aside>
 
-<main>
-  <router-outlet />
-</main>
+  <div class="workspace">
+    <header class="topbar">
+      <div class="breadcrumb">
+        <span>FINAN</span><span aria-hidden="true">/</span><strong>Visão geral</strong>
+      </div>
+      <span class="topbar-caption">Painel financeiro</span>
+    </header>
+    <main><router-outlet /></main>
+  </div>
+</div>

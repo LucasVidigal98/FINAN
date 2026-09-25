@@ -82,12 +82,12 @@ export class DashboardComponent {
     const colors = [
       '#818cf8',
       '#f472b6',
-      '#4ade80',
-      '#60a5fa',
-      '#fbbf24',
-      '#a78bfa',
-      '#2dd4bf',
-      '#fb7185',
+      '#a5b4fc',
+      '#f9a8d4',
+      '#6366f1',
+      '#ec4899',
+      '#c7d2fe',
+      '#fbcfe8',
     ];
 
     return distribution.categories.map((category, index) => {
@@ -116,9 +116,9 @@ export class DashboardComponent {
     color: string;
     dash: string;
   }> = [
-    { key: 'income', label: 'Receitas', color: '#4ade80', dash: '' },
-    { key: 'expense', label: 'Despesas', color: '#f87171', dash: '7 4' },
-    { key: 'investment', label: 'Investimentos', color: '#60a5fa', dash: '2 4' },
+    { key: 'income', label: 'Receitas', color: '#818cf8', dash: '' },
+    { key: 'expense', label: 'Despesas', color: '#f472b6', dash: '7 4' },
+    { key: 'investment', label: 'Investimentos', color: '#c7d2fe', dash: '2 4' },
   ];
   readonly cards = computed(() => {
     const comparison = this.comparison();

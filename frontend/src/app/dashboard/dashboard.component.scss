@@ -88,27 +88,6 @@ select {
   }
 }
 
-.balance {
-  border-color: #818cf8;
-  background: linear-gradient(145deg, #24243a, #18181c);
-}
-
-.income strong {
-  color: #4ade80;
-}
-
-.expense strong {
-  color: #f87171;
-}
-
-.balance strong {
-  color: #fff;
-}
-
-.investment strong {
-  color: #60a5fa;
-}
-
 .comparison {
   display: flex;
   flex-wrap: wrap;
@@ -121,11 +100,11 @@ select {
 }
 
 .comparison.favorable {
-  color: #4ade80;
+  color: #a5b4fc;
 }
 
 .comparison.warning {
-  color: #f87171;
+  color: #f472b6;
 }
 
 .comparison.neutral {
@@ -159,7 +138,7 @@ select {
 }
 
 .error {
-  color: #fca5a5;
+  color: #f472b6;
 }
 
 .chart-skeleton,
@@ -399,12 +378,6 @@ polyline {
   border: 0;
 }
 
-@media (min-width: 48rem) and (max-width: 79.999rem) {
-  .cards {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
 @media (max-width: 47.999rem) {
   .heading {
     display: grid;
@@ -449,5 +422,248 @@ polyline {
 
   .donut-chart .donut-total {
     font-size: 14px;
+  }
+}
+
+/* Dashboard composition inspired by the supplied reference. */
+.heading {
+  align-items: center;
+  margin-bottom: 1.2rem;
+}
+.eyebrow {
+  color: #818cf8;
+}
+h1 {
+  font-size: clamp(1.65rem, 3vw, 2rem);
+}
+label {
+  color: #a1a1aa;
+}
+select,
+button {
+  border-color: #27272a;
+  background: #18181c;
+}
+select {
+  min-width: 7rem;
+  padding: 0.55rem 0.7rem;
+}
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 14.5rem;
+  gap: 1.25rem;
+  align-items: start;
+}
+.dashboard-main {
+  min-width: 0;
+}
+.cards {
+  gap: 0.7rem;
+}
+.card {
+  min-height: 8.8rem;
+  padding: 1rem;
+  border-color: #27272a;
+  border-radius: 0.55rem;
+  background: #18181c;
+
+  .label {
+    margin-bottom: 0.65rem;
+    color: #a1a1aa;
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 0.76rem;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+  strong {
+    font-size: clamp(1.15rem, 1.75vw, 1.75rem);
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+  }
+}
+.balance {
+  border-color: #818cf8;
+  background: linear-gradient(145deg, #24243a, #18181c);
+}
+.income strong,
+.balance strong,
+.expense strong,
+.investment strong {
+  color: #fff;
+}
+.comparison {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+}
+.comparison.favorable {
+  color: #a5b4fc;
+}
+.comparison.warning {
+  color: #f472b6;
+}
+.previous-period,
+.comparison-note {
+  margin-top: 0.25rem;
+  font-size: 0.7rem;
+}
+.expense-distribution,
+.evolution {
+  margin: 0.8rem 0 0;
+  padding: 1.2rem;
+  border-color: #27272a;
+  border-radius: 0.6rem;
+  background: #18181c;
+}
+.evolution {
+  background: #18181c;
+}
+figcaption h2 {
+  font-size: 1.15rem;
+}
+.distribution-body {
+  grid-template-columns: minmax(11rem, 0.9fr) minmax(0, 1.1fr);
+  gap: 1rem;
+}
+.donut-shell {
+  width: min(100%, 14rem);
+}
+.donut-chart {
+  max-height: 14rem;
+}
+.donut-chart .donut-total {
+  font-size: 12px;
+}
+.distribution-item {
+  font-size: 0.8rem;
+}
+.grid {
+  stroke: #3f3f46;
+}
+.selected-band {
+  fill: #818cf8;
+}
+.insights {
+  min-width: 0;
+  border-left: 1px solid #27272a;
+  padding-left: 1.2rem;
+}
+.insight-section {
+  padding: 0.45rem 0 1.25rem;
+}
+.insight-section + .insight-section {
+  border-top: 1px solid #27272a;
+  padding-top: 1.25rem;
+}
+.insight-section .eyebrow {
+  margin-bottom: 0.55rem;
+  font-size: 0.66rem;
+}
+.insight-section h2 {
+  margin: 0 0 1.1rem;
+  font-size: 1rem;
+  font-weight: 500;
+}
+.insight-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.9rem 0;
+  min-width: 0;
+  color: #a1a1aa;
+  font-size: 0.74rem;
+}
+.insight-item div {
+  min-width: 0;
+}
+.insight-item div > span {
+  display: block;
+}
+.insight-item strong {
+  display: block;
+  margin-top: 0.2rem;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 550;
+  overflow-wrap: anywhere;
+}
+.insight-icon {
+  display: grid;
+  flex: 0 0 1.9rem;
+  width: 1.9rem;
+  height: 1.9rem;
+  place-items: center;
+  border-radius: 50%;
+  background: #818cf8;
+  color: #0e0e10;
+  font-size: 1rem;
+}
+.expense-icon {
+  background: #f472b6;
+  color: #0e0e10;
+}
+.balance-icon {
+  background: #a5b4fc;
+}
+.investment-icon {
+  background: #f9a8d4;
+  color: #0e0e10;
+}
+.category-insight {
+  margin-bottom: 0.95rem;
+  color: #a1a1aa;
+  font-size: 0.75rem;
+}
+.category-insight > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.4rem;
+  margin-bottom: 0.4rem;
+}
+.category-insight strong {
+  color: #fff;
+  font-weight: 500;
+}
+.category-track {
+  display: block;
+  height: 0.3rem;
+  border-radius: 1rem;
+  background: #27272a;
+  overflow: hidden;
+}
+.category-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #f472b6;
+}
+
+@media (max-width: 70rem) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+  .insights {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem;
+    border-left: 0;
+    border-top: 1px solid #27272a;
+    padding: 1rem 0 0;
+  }
+  .insight-section + .insight-section {
+    border-top: 0;
+    padding-top: 0.45rem;
+  }
+}
+@media (max-width: 47.999rem) {
+  .card {
+    min-height: 8rem;
+  }
+  .insights {
+    grid-template-columns: 1fr;
+  }
+  .insight-section + .insight-section {
+    border-top: 1px solid #27272a;
+    padding-top: 1.25rem;
   }
 }
