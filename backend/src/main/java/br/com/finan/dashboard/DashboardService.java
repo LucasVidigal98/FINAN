@@ -1,10 +1,17 @@
 package br.com.finan.dashboard;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.DateTimeException;
 import java.time.YearMonth;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.IntStream;
 
+import br.com.finan.category.Category;
 import br.com.finan.fixedentry.FixedEntryService;
 import br.com.finan.transaction.FinancialTransaction;
 import br.com.finan.transaction.FinancialTransactionRepository;
@@ -38,12 +45,7 @@ public class DashboardService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid year or month", exception);
         }
 
-        fixedEntryService.materialize(yearMonth);
-        List<FinancialTransaction> transactions = repository.findAllByOccurredOnBetween(
-                yearMonth.atDay(1), yearMonth.atEndOfMonth()).stream()
-                .filter(transaction -> transaction.getFixedEntry() == null
-                        || transaction.getFixedEntry().isActive())
-                .toList();
+        List<FinancialTransaction> transactions = transactions(yearMonth);
         BigDecimal income = total(transactions, TransactionType.INCOME);
         BigDecimal expense = total(transactions, TransactionType.EXPENSE);
         BigDecimal investment = total(transactions, TransactionType.INVESTMENT);
@@ -52,10 +54,118 @@ public class DashboardService {
                 income.subtract(expense).subtract(investment), transactions.size());
     }
 
+    @Transactional
+    public ExpenseDistributionResponse expenseDistribution(int year, int month) {
+        if (year < 1 || year > 9999 || month < 1 || month > 12) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid year or month");
+        }
+
+        YearMonth period = YearMonth.of(year, month);
+        Map<UUID, ExpenseGroup> groups = new HashMap<>();
+        transactions(period).stream()
+                .filter(transaction -> transaction.getType() == TransactionType.EXPENSE)
+                .forEach(transaction -> {
+                    Category category = transaction.getCategory();
+                    UUID categoryId = category == null ? null : category.getId();
+                    String categoryName = category == null ? "Sem categoria" : category.getName();
+                    groups.computeIfAbsent(categoryId, id -> new ExpenseGroup(id, categoryName))
+                            .add(transaction.getAmount());
+                });
+
+        BigDecimal totalExpense = groups.values().stream()
+                .map(group -> group.amount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        List<ExpenseCategoryDistribution> categories = totalExpense.signum() == 0 ? List.of()
+                : groups.values().stream()
+                        .map(group -> group.toResponse(totalExpense))
+                        .sorted(Comparator.comparing(ExpenseCategoryDistribution::amount).reversed()
+                                .thenComparing(ExpenseCategoryDistribution::categoryName)
+                                .thenComparing(ExpenseCategoryDistribution::categoryId,
+                                        Comparator.nullsFirst(Comparator.naturalOrder())))
+                        .toList();
+
+        return new ExpenseDistributionResponse(period.toString(), totalExpense, categories);
+    }
+
+    @Transactional
+    public DashboardComparisonResponse comparison(int year, int month) {
+        if (year < 1 || year > 9999 || month < 1 || month > 12 || (year == 1 && month == 1)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid year or month");
+        }
+        YearMonth currentPeriod = YearMonth.of(year, month);
+        YearMonth previousPeriod = currentPeriod.minusMonths(1);
+
+        MonthlySummaryResponse previous = monthly(previousPeriod.getYear(), previousPeriod.getMonthValue());
+        MonthlySummaryResponse current = monthly(currentPeriod.getYear(), currentPeriod.getMonthValue());
+
+        return new DashboardComparisonResponse(currentPeriod.toString(), previousPeriod.toString(),
+                new ComparisonMetrics(
+                        compare(current.totalIncome(), previous.totalIncome()),
+                        compare(current.totalExpense(), previous.totalExpense()),
+                        compare(current.availableBalance(), previous.availableBalance()),
+                        compare(current.totalInvestment(), previous.totalInvestment())));
+    }
+
+    @Transactional
+    public DashboardEvolutionResponse evolution(int year, int month) {
+        if (year < 1 || year > 9999 || month < 1 || month > 12 || (year == 1 && month < 6)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid year or month");
+        }
+        YearMonth endPeriod = YearMonth.of(year, month);
+        YearMonth startPeriod = endPeriod.minusMonths(5);
+        List<DashboardEvolutionPoint> points = IntStream.range(0, 6)
+                .mapToObj(startPeriod::plusMonths)
+                .map(period -> {
+                    MonthlySummaryResponse summary = monthly(period.getYear(), period.getMonthValue());
+                    return new DashboardEvolutionPoint(period.toString(), summary.totalIncome(),
+                            summary.totalExpense(), summary.totalInvestment());
+                })
+                .toList();
+        return new DashboardEvolutionResponse(startPeriod.toString(), endPeriod.toString(), points);
+    }
+
+    private MetricComparison compare(BigDecimal current, BigDecimal previous) {
+        BigDecimal absoluteChange = current.subtract(previous);
+        BigDecimal percentageChange = previous.signum() == 0
+                ? (current.signum() == 0 ? BigDecimal.ZERO : null)
+                : absoluteChange.multiply(BigDecimal.valueOf(100))
+                        .divide(previous, 2, RoundingMode.HALF_UP);
+        return new MetricComparison(current, previous, absoluteChange, percentageChange);
+    }
+
     private BigDecimal total(List<FinancialTransaction> transactions, TransactionType type) {
         return transactions.stream()
                 .filter(transaction -> transaction.getType() == type)
                 .map(FinancialTransaction::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private List<FinancialTransaction> transactions(YearMonth yearMonth) {
+        fixedEntryService.materialize(yearMonth);
+        return repository.findAllByOccurredOnBetween(yearMonth.atDay(1), yearMonth.atEndOfMonth()).stream()
+                .filter(transaction -> transaction.getFixedEntry() == null
+                        || transaction.getFixedEntry().isActive())
+                .toList();
+    }
+
+    private static final class ExpenseGroup {
+        private final UUID categoryId;
+        private final String categoryName;
+        private BigDecimal amount = BigDecimal.ZERO;
+
+        private ExpenseGroup(UUID categoryId, String categoryName) {
+            this.categoryId = categoryId;
+            this.categoryName = categoryName;
+        }
+
+        private void add(BigDecimal amount) {
+            this.amount = this.amount.add(amount);
+        }
+
+        private ExpenseCategoryDistribution toResponse(BigDecimal totalExpense) {
+            BigDecimal percentage = amount.multiply(BigDecimal.valueOf(100))
+                    .divide(totalExpense, 2, RoundingMode.HALF_UP);
+            return new ExpenseCategoryDistribution(categoryId, categoryName, amount, percentage);
+        }
     }
 }
