@@ -12,3 +12,6 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+pluggy:
+  client-id: ${PLUGGY_CLIENT_ID:}
+  client-secret: ${PLUGGY_CLIENT_SECRET:}

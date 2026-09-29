@@ -20,6 +20,8 @@ services:
       SPRING_DATASOURCE_URL: ${DATABASE_URL:-jdbc:postgresql://postgres:5432/${POSTGRES_DB:-finan}}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-finan}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no .env ou no ambiente}
+      PLUGGY_CLIENT_ID: ${PLUGGY_CLIENT_ID:-}
+      PLUGGY_CLIENT_SECRET: ${PLUGGY_CLIENT_SECRET:-}
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     volumes:
