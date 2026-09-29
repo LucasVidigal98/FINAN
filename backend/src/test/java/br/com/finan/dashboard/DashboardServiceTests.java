@@ -234,6 +234,43 @@ class DashboardServiceTests {
         assertThat(response.categories()).isEmpty();
     }
 
+    @Test
+    void returnsFiveLargestEligibleExpensesInDescendingOrder() {
+        YearMonth period = YearMonth.of(2026, 9);
+        FixedEntry inactive = mock(FixedEntry.class);
+        when(inactive.isActive()).thenReturn(false);
+        Category market = category("Mercado", "00000000-0000-0000-0000-000000000001");
+        FinancialTransaction first = expense("90", period, market);
+        first.setDescription("Compra do mês");
+        when(repository.findAllByOccurredOnBetween(any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(List.of(transaction("999", period, TransactionType.INCOME),
+                        transaction("900", period, TransactionType.EXPENSE, inactive),
+                        expense("10", period, null), expense("20", period, null),
+                        expense("30", period, null), expense("40", period, null),
+                        expense("50", period, null), first));
+
+        LargestExpensesResponse result = service.largestExpenses(2026, 9);
+
+        assertThat(result.period()).isEqualTo("2026-09");
+        assertThat(result.expenses()).extracting(LargestExpense::amount)
+                .containsExactly(new BigDecimal("90"), new BigDecimal("50"), new BigDecimal("40"),
+                        new BigDecimal("30"), new BigDecimal("20"));
+        assertThat(result.expenses().getFirst().description()).isEqualTo("Compra do mês");
+        assertThat(result.expenses().getFirst().categoryName()).isEqualTo("Mercado");
+        assertThat(result.expenses().getFirst().occurredOn()).isEqualTo(period.atDay(1));
+        assertThat(result.expenses().get(1).categoryName()).isEqualTo("Sem categoria");
+        verify(fixedEntryService).materialize(period);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"0,9", "10000,9", "2026,0", "2026,13"})
+    void rejectsInvalidLargestExpensesPeriodBeforeMaterializing(int year, int month) {
+        assertThatThrownBy(() -> service.largestExpenses(year, month))
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining("400 BAD_REQUEST");
+        verifyNoInteractions(repository, fixedEntryService);
+    }
+
     private void stubTransactions(Map<YearMonth, List<FinancialTransaction>> transactions) {
         when(repository.findAllByOccurredOnBetween(any(LocalDate.class), any(LocalDate.class)))
                 .thenAnswer(invocation -> transactions.getOrDefault(

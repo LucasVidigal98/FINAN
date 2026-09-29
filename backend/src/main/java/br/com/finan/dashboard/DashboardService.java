@@ -88,6 +88,26 @@ public class DashboardService {
     }
 
     @Transactional
+    public LargestExpensesResponse largestExpenses(int year, int month) {
+        if (year < 1 || year > 9999 || month < 1 || month > 12) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid year or month");
+        }
+
+        YearMonth period = YearMonth.of(year, month);
+        List<LargestExpense> expenses = transactions(period).stream()
+                .filter(transaction -> transaction.getType() == TransactionType.EXPENSE)
+                .sorted(Comparator.comparing(FinancialTransaction::getAmount).reversed()
+                        .thenComparing(FinancialTransaction::getOccurredOn, Comparator.reverseOrder())
+                        .thenComparing(FinancialTransaction::getId, Comparator.nullsLast(Comparator.naturalOrder())))
+                .limit(5)
+                .map(transaction -> new LargestExpense(transaction.getId(), transaction.getDescription(),
+                        transaction.getAmount(), transaction.getOccurredOn(),
+                        transaction.getCategory() == null ? "Sem categoria" : transaction.getCategory().getName()))
+                .toList();
+        return new LargestExpensesResponse(period.toString(), expenses);
+    }
+
+    @Transactional
     public DashboardComparisonResponse comparison(int year, int month) {
         if (year < 1 || year > 9999 || month < 1 || month > 12 || (year == 1 && month == 1)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid year or month");

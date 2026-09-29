@@ -1,4 +1,4 @@
-import { CurrencyPipe, DecimalPipe } from '@angular/common';
+import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -8,6 +8,7 @@ import { ComparisonMetrics, DashboardComparison } from './dashboard-comparison.m
 import { DashboardEvolution, DashboardEvolutionPoint } from './dashboard-evolution.model';
 import { DashboardService } from './dashboard.service';
 import { ExpenseDistribution, ExpenseDistributionCategory } from './expense-distribution.model';
+import { LargestExpenses } from './largest-expenses.model';
 
 type MetricKey = keyof ComparisonMetrics;
 type ComparisonDirection = 'increase' | 'decrease' | 'stable';
@@ -24,7 +25,7 @@ interface ExpenseSlice {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CurrencyPipe, DecimalPipe, FormsModule],
+  imports: [CurrencyPipe, DatePipe, DecimalPipe, FormsModule],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
 })
@@ -66,6 +67,7 @@ export class DashboardComponent {
   readonly comparison = signal<DashboardComparison | undefined>(undefined);
   readonly evolution = signal<DashboardEvolution | undefined>(undefined);
   readonly expenseDistribution = signal<ExpenseDistribution | undefined>(undefined);
+  readonly largestExpenses = signal<LargestExpenses | undefined>(undefined);
   readonly activePoint = signal<number | undefined>(undefined);
   readonly activeExpenseCategory = signal<number | undefined>(undefined);
   readonly expenseSlices = computed(() => {
@@ -148,6 +150,7 @@ export class DashboardComponent {
     this.comparison.set(undefined);
     this.evolution.set(undefined);
     this.expenseDistribution.set(undefined);
+    this.largestExpenses.set(undefined);
     this.activePoint.set(undefined);
     this.activeExpenseCategory.set(undefined);
 
@@ -155,6 +158,7 @@ export class DashboardComponent {
       comparison: this.dashboardService.getComparison(year, month),
       evolution: this.dashboardService.getEvolution(year, month),
       expenseDistribution: this.dashboardService.getExpenseDistribution(year, month),
+      largestExpenses: this.dashboardService.getLargestExpenses(year, month),
     })
       .pipe(
         retry({
@@ -176,7 +180,7 @@ export class DashboardComponent {
       );
 
     this.activeRequest = request.subscribe({
-      next: ({ comparison, evolution, expenseDistribution }) => {
+      next: ({ comparison, evolution, expenseDistribution, largestExpenses }) => {
         if (this.requestId !== currentRequestId) return;
         if (
           !this.isValidComparison(comparison) ||
@@ -184,6 +188,7 @@ export class DashboardComponent {
           comparison.currentPeriod !== period ||
           comparison.currentPeriod !== evolution.endPeriod ||
           !this.isValidExpenseDistribution(expenseDistribution, period) ||
+          !this.isValidLargestExpenses(largestExpenses, period) ||
           !this.isClose(
             expenseDistribution.totalExpense,
             comparison.metrics.expense.current,
@@ -197,12 +202,14 @@ export class DashboardComponent {
         this.comparison.set(comparison);
         this.evolution.set(evolution);
         this.expenseDistribution.set(expenseDistribution);
+        this.largestExpenses.set(largestExpenses);
       },
       error: () => {
         if (this.requestId !== currentRequestId) return;
         this.comparison.set(undefined);
         this.evolution.set(undefined);
         this.expenseDistribution.set(undefined);
+        this.largestExpenses.set(undefined);
         this.errorMessage.set('Não foi possível carregar o resumo do período. Tente novamente.');
       },
     });
@@ -433,6 +440,34 @@ export class DashboardComponent {
     return (
       Math.abs(left - right) <=
       Number.EPSILON * Math.max(1, Math.abs(left), Math.abs(right)) * Math.max(1, terms) * 4
+    );
+  }
+
+  private isValidLargestExpenses(
+    value: LargestExpenses | null | undefined,
+    period: string,
+  ): value is LargestExpenses {
+    if (
+      !value ||
+      value.period !== period ||
+      !Array.isArray(value.expenses) ||
+      value.expenses.length > 5
+    )
+      return false;
+    return value.expenses.every(
+      (expense, index) =>
+        expense &&
+        typeof expense.id === 'string' &&
+        typeof expense.description === 'string' &&
+        expense.description.trim() !== '' &&
+        this.isFiniteNumber(expense.amount) &&
+        expense.amount > 0 &&
+        typeof expense.occurredOn === 'string' &&
+        /^\d{4}-\d{2}-\d{2}$/.test(expense.occurredOn) &&
+        expense.occurredOn.startsWith(period + '-') &&
+        typeof expense.categoryName === 'string' &&
+        expense.categoryName.trim() !== '' &&
+        (index === 0 || value.expenses[index - 1].amount >= expense.amount),
     );
   }
 
