@@ -39,6 +39,19 @@ class ConnectTokenControllerTests {
     }
 
     @Test
+    void returnsControlledErrorWhenCredentialsAreRejected() throws Exception {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        server.expect(requestTo("https://api.pluggy.ai/auth"))
+                .andRespond(withUnauthorizedRequest().body("test-id test-secret sensitive-response"));
+
+        String body = mvc(builder).perform(post("/api/open-finance/connect-token"))
+                .andExpect(status().isBadGateway()).andReturn().getResponse().getContentAsString();
+        assertThat(body).doesNotContain("test-id", "test-secret", "sensitive-response");
+        server.verify();
+    }
+
+    @Test
     void hidesExternalFailure() throws Exception {
         RestClient.Builder builder = RestClient.builder();
         MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
