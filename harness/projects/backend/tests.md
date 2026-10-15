@@ -1,0 +1,3 @@
+# tests
+
+JUnit 5, AssertJ, Spring Boot Test e MockMvc; classes *Tests.java espelham pacotes em src/test/java. Há testes de controllers, serviços, validação, persistência, dashboard e Pluggy. Nesta pasta com Java 21 e datasource de testes: ./gradlew test (Windows: .\gradlew.bat test). Via Compose, da raiz FINAN, exportar SPRING_DATASOURCE_URL, SPRING_DATASOURCE_USERNAME e SPRING_DATASOURCE_PASSWORD para banco de testes acessível pelo container e executar: docker compose run --rm -e SPRING_DATASOURCE_URL -e SPRING_DATASOURCE_USERNAME -e SPRING_DATASOURCE_PASSWORD backend ./gradlew test. Não usar banco pessoal herdado do Compose. Testes unitários devem isolar banco/rede; integrações exigem PostgreSQL separado e vazio. Meta de cobertura não definida.

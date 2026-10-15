@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "repositories": [
+    {
+      "path": "frontend",
+      "tool": "codex"
+    },
+    {
+      "path": "backend",
+      "tool": "codex"
+    }
+  ]
+}
