@@ -1,0 +1,1 @@
+../harness/projects/frontend/codex/AGENTS.md

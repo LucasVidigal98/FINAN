@@ -2,6 +2,7 @@ import { registerLocaleData } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import localePt from '@angular/common/locales/pt';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { afterEach, vi } from 'vitest';
 import { defer, Observable, of, Subject, throwError } from 'rxjs';
 import { DashboardComponent } from './dashboard.component';
 import { DashboardService } from './dashboard.service';
@@ -78,6 +79,8 @@ describe('DashboardComponent', () => {
   };
 
   beforeEach(async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 8, 15, 12));
     response = {
       currentPeriod: '2026-09',
       previousPeriod: '2026-08',
@@ -115,6 +118,8 @@ describe('DashboardComponent', () => {
       providers: [{ provide: DashboardService, useValue: dashboardService }],
     }).compileComponents();
   });
+
+  afterEach(() => vi.useRealTimers());
 
   it('loads all dashboard data together and renders metrics and expenses with Brazilian formatting', () => {
     render();

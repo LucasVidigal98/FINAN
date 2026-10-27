@@ -22,6 +22,13 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'open-finance',
+    loadComponent: () =>
+      import('./open-finance/open-finance-page.component').then(
+        (component) => component.OpenFinancePageComponent,
+      ),
+  },
+  {
     path: 'categories',
     loadComponent: () =>
       import('./categories/category-page.component').then(
