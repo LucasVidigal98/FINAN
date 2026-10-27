@@ -1,6 +1,6 @@
 # Pluggy Connect Widget no Angular — Tasks
 
-Status: implementação realizada; 89 testes locais aprovados e build de produção aprovado; conferência real do sandbox pendente em 25/10/2026. Entregas da [Spec](spec.md) e [Spec Técnica](spec-tecnica.md).
+Status: implementação e homologação real concluídas em 26/10/2026; 89 testes aprovados e build de produção aprovado também dentro dos containers. Entregas da [Spec](spec.md) e [Spec Técnica](spec-tecnica.md).
 
 ## 1. Abrir uma conexão pela área Open Finance (CA01, CA04)
 
@@ -22,23 +22,23 @@ Status: implementação realizada; 89 testes locais aprovados e build de produç
 - [x] Cobrir contrato HTTP, loading/duplicidade, abertura, sucesso, fechamento, erro, resposta inválida, falha de abertura e retry com token diferente.
 - [x] Cobrir sucesso → close, erro → close, destruição durante HTTP/widget e callback de tentativa anterior.
 - [x] Verificar link/rota, feedback acessível e configuração de sandbox por modo de execução.
-- [ ] Executar os comandos de teste e build dentro dos containers quando o Docker voltar a iniciar. Equivalentes locais executados; consultar evidências abaixo.
+- [x] Executar os comandos de teste e build dentro dos containers quando o Docker voltar a iniciar. Equivalentes locais executados; consultar evidências abaixo.
 - [x] Executar Prettier nos arquivos frontend alterados e `git diff --check`; registrar resultados reais e limitações.
 
 ## 4. Conferir no navegador (CA01–CA05)
 
-- [ ] Com frontend/backend disponíveis e credenciais já configuradas, abrir Open Finance; conferir layout desktop/celular e navegação por teclado.
-- [ ] Clicar em conectar e confirmar um POST e abertura do widget; repetir clique durante loading para verificar bloqueio, sem copiar token ou exportar HAR sensível.
-- [ ] Fechar o widget, conferir feedback/foco e repetir; confirmar nova requisição e nova instância.
-- [ ] Completar conexão sandbox e verificar mensagem de sucesso preservada após fechamento, sem importar dados para o FINAN.
-- [ ] Simular falha do endpoint e erro do widget, usando sandbox quando possível; conferir mensagem sanitizada e retry após restaurar o funcionamento.
-- [ ] Sair da página durante solicitação/widget; retornar e verificar ausência de modal órfão ou abertura tardia.
-- [ ] Conferir ausência de segredos no console/storage e sandbox desabilitado na configuração de produção. Registrar evidências sem credenciais, tokens ou dados pessoais.
+- [x] Com frontend/backend disponíveis e credenciais já configuradas, abrir Open Finance; conferir layout desktop/celular e navegação por teclado.
+- [x] Clicar em conectar e confirmar um POST e abertura do widget; repetir clique durante loading para verificar bloqueio, sem copiar token ou exportar HAR sensível.
+- [x] Fechar o widget, conferir feedback/foco e repetir; confirmar nova requisição e nova instância.
+- [x] Completar conexão sandbox e verificar mensagem de sucesso preservada após fechamento, sem importar dados para o FINAN.
+- [x] Simular falha do endpoint e erro do widget, usando sandbox quando possível; conferir mensagem sanitizada e retry após restaurar o funcionamento.
+- [x] Sair da página durante solicitação/widget; retornar e verificar ausência de modal órfão ou abertura tardia.
+- [x] Conferir ausência de segredos no console/storage e sandbox desabilitado na configuração de produção. Registrar evidências sem credenciais, tokens ou dados pessoais.
 - [x] Atualizar status dos três documentos somente com resultados efetivamente observados. Não declarar a integração concluída antes da validação manual.
 
 ## Limites desta entrega
 
-Frontend implementado com SDK 2.14.2. Backend, importação, persistência e migrations não foram alterados. Correções pré-existentes do dashboard foram necessárias para compilar e validar o frontend. A conferência manual completa depende da disponibilidade do Docker/backend e do sandbox.
+Frontend implementado com SDK 2.14.2. Backend, importação, persistência e migrations não foram alterados. Correções pré-existentes do dashboard foram necessárias para compilar e validar o frontend.
 
 
 ## Evidências da retomada em 25/10/2026
@@ -53,5 +53,16 @@ Frontend implementado com SDK 2.14.2. Backend, importação, persistência e mig
 - Limite de logs: o código do FINAN não registra tokens/payloads; o SDK oficial ainda contém log interno em falha de renderização. A ausência de segredos durante uma conexão real permanece pendente.
 
 - Suíte local: 11 arquivos / 89 testes aprovados (`npm test -- --watch=false`). A execução inicial esbarrou em EPERM no diretório temporário do sandbox; o teste foi executado com TEMP/TMP dentro do workspace. Mock construtível ajustado para Vitest 4. Cobertura adicional: callback antigo após retry, resposta inválida, exceção no construtor e rejeição de destroy.
+
+## Evidências da homologação em 26/10/2026
+
+- Os containers de frontend, backend e PostgreSQL foram reconstruídos e iniciados; banco saudável, sete migrations validadas e backend disponível na porta 8080.
+- O widget real abriu com um Connect Token novo, em português, tema escuro e com os conectores sandbox disponíveis. O botão permaneceu desabilitado durante a solicitação e enquanto o widget estava ativo.
+- O fechamento exibiu a mensagem neutra, devolveu foco ao botão e permitiu uma segunda tentativa, que abriu uma nova instância do widget.
+- Uma conexão sandbox foi concluída de ponta a ponta. O widget autenticou, sincronizou e fechou; o FINAN exibiu a mensagem fixa de sucesso e não iniciou importação de contas ou transações.
+- Com o backend parado, o frontend exibiu apenas a mensagem fixa de erro e liberou retry. Após reiniciar o backend, uma nova tentativa abriu e fechou o widget normalmente.
+- A saída da rota durante o widget e o retorno à página não deixaram modal órfão. O layout em 390×844 não apresentou rolagem horizontal e manteve o botão visível.
+- A inspeção após os fluxos encontrou zero entradas em `localStorage`, `sessionStorage` e IndexedDB, nenhum erro de console e nenhum padrão de Connect Token/JWT nos logs capturados.
+- Dentro do container: 11 arquivos / 89 testes aprovados e build de produção aprovado. Permanecem apenas os avisos já conhecidos de budget do dashboard e CommonJS do `zoid`.
 
 

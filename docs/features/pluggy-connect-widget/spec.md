@@ -1,6 +1,6 @@
 # Pluggy Connect Widget no Angular — Spec
 
-Status: frontend implementado; validação real com sandbox pendente por indisponibilidade do Docker/backend em 25/10/2026. Evidências e limites em [Tasks](tasks.md).
+Status: frontend implementado e homologado com o sandbox real em 26/10/2026. Evidências e limites em [Tasks](tasks.md).
 
 ## Objetivo
 

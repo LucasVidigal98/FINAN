@@ -1,6 +1,6 @@
 # Pluggy Connect Widget no Angular — Spec Técnica
 
-Status: frontend implementado conforme [Spec](spec.md); conferência real do sandbox pendente. Resultados em [Tasks](tasks.md).
+Status: frontend implementado conforme [Spec](spec.md) e homologado com o sandbox real em 26/10/2026. Resultados em [Tasks](tasks.md).
 
 ## SDK verificado na implementação
 
