@@ -1,0 +1,39 @@
+<div class="heading">
+  <p class="eyebrow">Open Finance</p>
+  <h1>Conectar instituições</h1>
+  <p class="intro">Conecte sua instituição financeira pela Pluggy.</p>
+</div>
+
+<section class="connect-card" aria-labelledby="connect-heading">
+  <div>
+    <h2 id="connect-heading">Conectar uma instituição</h2>
+    <p>A importação de contas e transações estará disponível em uma próxima etapa.</p>
+  </div>
+  <button
+    #connectButton
+    type="button"
+    [disabled]="state() !== 'idle'"
+    [attr.aria-busy]="state() !== 'idle'"
+    (click)="connect()"
+  >
+    {{
+      state() === 'idle'
+        ? 'Conectar instituição'
+        : state() === 'requesting'
+          ? 'Preparando conexão…'
+          : state() === 'closing'
+            ? 'Encerrando conexão…'
+            : 'Conexão em andamento…'
+    }}
+  </button>
+  @if (state() === 'requesting') {
+    <p class="feedback" role="status">Preparando conexão…</p>
+  } @else if (state() === 'active') {
+    <p class="feedback" role="status">Conexão em andamento…</p>
+  } @else if (state() === 'closing') {
+    <p class="feedback" role="status">Encerrando conexão…</p>
+  }
+  @if (message()) {
+    <p class="feedback" [attr.role]="messageRole()">{{ message() }}</p>
+  }
+</section>

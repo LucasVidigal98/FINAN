@@ -4,10 +4,8 @@
 
 .heading {
   display: flex;
-  align-items: end;
   justify-content: space-between;
   gap: 2rem;
-  margin-bottom: 2rem;
 }
 
 .eyebrow,
@@ -28,7 +26,6 @@ label {
 
 h1 {
   margin: 0;
-  font-size: clamp(2rem, 6vw, 4rem);
   font-weight: 500;
   line-height: 1.04;
 }
@@ -51,15 +48,9 @@ button {
   color: #fff;
 }
 
-select {
-  min-width: 8rem;
-  padding: 0.7rem 0.8rem;
-}
-
 .cards {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1rem;
 }
 
 .card,
@@ -73,17 +64,14 @@ select {
 .card {
   display: flex;
   min-width: 0;
-  min-height: 14rem;
   flex-direction: column;
 
   .label {
-    margin: 0 0 1rem;
+    margin: 0;
   }
 
   strong {
     display: block;
-    font-size: clamp(1.35rem, 2.5vw, 2rem);
-    font-weight: 500;
     overflow-wrap: anywhere;
   }
 }
@@ -93,9 +81,8 @@ select {
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0.35rem;
-  margin: 1rem 0 0;
+  margin: 0;
   color: #a1a1aa;
-  font-size: 0.9rem;
   overflow-wrap: anywhere;
 }
 
@@ -113,9 +100,8 @@ select {
 
 .comparison-note,
 .previous-period {
-  margin: 0.65rem 0 0;
+  margin: 0;
   color: #a1a1aa;
-  font-size: 0.8rem;
   line-height: 1.4;
 }
 
@@ -164,14 +150,6 @@ select {
 
 .distribution-skeleton {
   height: 17rem;
-}
-
-.evolution {
-  padding: 1.5rem;
-}
-
-.expense-distribution {
-  padding: 1.5rem;
 }
 
 .largest-expenses {
@@ -232,21 +210,17 @@ select {
 
 .distribution-body {
   display: grid;
-  grid-template-columns: minmax(12rem, 0.85fr) minmax(0, 1.15fr);
   align-items: center;
-  gap: 1.5rem;
   margin-top: 1rem;
 }
 
 .donut-shell {
   position: relative;
-  width: min(100%, 18rem);
   margin-inline: auto;
 }
 
 .donut-chart {
   min-height: 0;
-  max-height: 18rem;
   touch-action: manipulation;
 }
 
@@ -261,7 +235,6 @@ select {
 
 .donut-chart .donut-total {
   fill: #fff;
-  font-size: 14px;
 }
 
 .distribution-list {
@@ -278,7 +251,6 @@ select {
   align-items: center;
   gap: 0.65rem;
   color: #e4e4e7;
-  font-size: 0.9rem;
   overflow-wrap: anywhere;
 
   strong {
@@ -324,7 +296,6 @@ figcaption {
   }
   h2 {
     margin: 0;
-    font-size: 1.2rem;
     font-weight: 500;
   }
 }
@@ -449,13 +420,8 @@ polyline {
     grid-template-columns: 1fr;
   }
 
-  .loading-charts,
-  .distribution-body {
+  .loading-charts {
     grid-template-columns: 1fr;
-  }
-
-  .distribution-body {
-    gap: 1rem;
   }
 
   figcaption {
@@ -475,10 +441,6 @@ polyline {
   svg text {
     font-size: 10px;
   }
-
-  .donut-chart .donut-total {
-    font-size: 14px;
-  }
 }
 
 /* Dashboard composition inspired by the supplied reference. */
@@ -486,19 +448,8 @@ polyline {
   align-items: center;
   margin-bottom: 1.2rem;
 }
-.eyebrow {
-  color: #818cf8;
-}
 h1 {
   font-size: clamp(1.65rem, 3vw, 2rem);
-}
-label {
-  color: #a1a1aa;
-}
-select,
-button {
-  border-color: #27272a;
-  background: #18181c;
 }
 select {
   min-width: 7rem;
@@ -519,9 +470,7 @@ select {
 .card {
   min-height: 8.8rem;
   padding: 1rem;
-  border-color: #27272a;
   border-radius: 0.55rem;
-  background: #18181c;
 
   .label {
     margin-bottom: 0.65rem;
@@ -552,9 +501,6 @@ select {
   margin-top: 0.5rem;
   font-size: 0.75rem;
 }
-.comparison.favorable {
-  color: #a5b4fc;
-}
 .comparison.warning {
   color: #f472b6;
 }
@@ -567,12 +513,7 @@ select {
 .evolution {
   margin: 0.8rem 0 0;
   padding: 1.2rem;
-  border-color: #27272a;
   border-radius: 0.6rem;
-  background: #18181c;
-}
-.evolution {
-  background: #18181c;
 }
 figcaption h2 {
   font-size: 1.15rem;
@@ -592,12 +533,6 @@ figcaption h2 {
 }
 .distribution-item {
   font-size: 0.8rem;
-}
-.grid {
-  stroke: #3f3f46;
-}
-.selected-band {
-  fill: #818cf8;
 }
 .insights {
   min-width: 0;
