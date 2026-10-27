@@ -390,10 +390,10 @@ describe('DashboardComponent', () => {
         period: '2026-09',
         expenses: [
           {
-            id: 'x',
+            id: '11111111-1111-4111-8111-111111111111',
             description: 'Inválida',
-            amount: NaN,
-            occurredOn: '2026-09-05',
+            amount: 100,
+            occurredOn: '2026-09-31',
             categoryName: 'Mercado',
           },
         ],
@@ -406,6 +406,35 @@ describe('DashboardComponent', () => {
     fixture.detectChanges();
     expect(dashboardService.getLargestExpenses).toHaveBeenCalledTimes(2);
     expect(fixture.nativeElement.querySelector('.largest-expenses')).not.toBeNull();
+  });
+
+  it('rejects largest expenses outside the stable tie-break order', () => {
+    dashboardService.getLargestExpenses.mockReturnValueOnce(
+      of({
+        period: '2026-09',
+        expenses: [
+          {
+            id: '22222222-2222-4222-8222-222222222222',
+            description: 'Mais antiga',
+            amount: 100,
+            occurredOn: '2026-09-04',
+            categoryName: 'Mercado',
+          },
+          {
+            id: '11111111-1111-4111-8111-111111111111',
+            description: 'Mais recente',
+            amount: 100,
+            occurredOn: '2026-09-05',
+            categoryName: 'Mercado',
+          },
+        ],
+      }),
+    );
+
+    render();
+
+    expect(fixture.nativeElement.querySelector('[role="alert"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.largest-expenses')).toBeNull();
   });
 
   it('offers category details to keyboard and touch users and dismisses them with Escape', () => {

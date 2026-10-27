@@ -1,6 +1,6 @@
 # Maiores despesas no Dashboard — Spec Técnica
 
-Status: implementada conforme [Spec](spec.md); validação frontend e teste unitário backend aprovados, integração backend pendente. Resultados em [Tasks](tasks.md).
+Status: implementada conforme [Spec](spec.md); validação frontend e testes backend unitário e de integração aprovados. Inspeção visual pendente. Resultados em [Tasks](tasks.md).
 
 ## Base existente
 

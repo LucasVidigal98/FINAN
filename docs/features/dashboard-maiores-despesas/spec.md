@@ -1,6 +1,6 @@
 # Maiores despesas no Dashboard — Spec
 
-Status: implementada em 23/09/2026; testes frontend, build e teste unitário backend aprovados. Teste de integração backend e inspeção visual pendentes. Resultados em [Tasks](tasks.md).
+Status: implementada em 23/09/2026; testes frontend, build e testes backend unitário e de integração aprovados. Inspeção visual pendente. Resultados em [Tasks](tasks.md).
 
 ## Objetivo
 

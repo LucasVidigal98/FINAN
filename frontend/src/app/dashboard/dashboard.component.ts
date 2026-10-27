@@ -458,17 +458,35 @@ export class DashboardComponent {
       (expense, index) =>
         expense &&
         typeof expense.id === 'string' &&
+        /^[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}$/i.test(expense.id) &&
         typeof expense.description === 'string' &&
         expense.description.trim() !== '' &&
         this.isFiniteNumber(expense.amount) &&
         expense.amount > 0 &&
         typeof expense.occurredOn === 'string' &&
-        /^\d{4}-\d{2}-\d{2}$/.test(expense.occurredOn) &&
-        expense.occurredOn.startsWith(period + '-') &&
+        this.isValidDateInPeriod(expense.occurredOn, period) &&
         typeof expense.categoryName === 'string' &&
         expense.categoryName.trim() !== '' &&
-        (index === 0 || value.expenses[index - 1].amount >= expense.amount),
+        (index === 0 || this.isLargestExpenseOrdered(value.expenses[index - 1], expense)),
     );
+  }
+
+  private isLargestExpenseOrdered(
+    previous: LargestExpenses['expenses'][number],
+    current: LargestExpenses['expenses'][number],
+  ): boolean {
+    return (
+      previous.amount > current.amount ||
+      (previous.amount === current.amount &&
+        (previous.occurredOn > current.occurredOn ||
+          (previous.occurredOn === current.occurredOn && previous.id <= current.id)))
+    );
+  }
+
+  private isValidDateInPeriod(value: string, period: string): boolean {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || !value.startsWith(period + '-')) return false;
+    const date = new Date(`${value}T00:00:00Z`);
+    return !Number.isNaN(date.getTime()) && date.toISOString().startsWith(value);
   }
 
   private sectorPath(start: number, end: number): string {
