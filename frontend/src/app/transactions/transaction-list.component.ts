@@ -1,5 +1,6 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { FinancialAccount } from '../accounts/financial-account';
 import { FinancialAccountService } from '../accounts/financial-account.service';
@@ -12,7 +13,7 @@ import { TransactionService } from './transaction.service';
 @Component({
   selector: 'app-transaction-list',
   standalone: true,
-  imports: [CurrencyPipe, DatePipe, TransactionFormComponent],
+  imports: [CurrencyPipe, DatePipe, FormsModule, TransactionFormComponent],
   templateUrl: './transaction-list.component.html',
   styleUrl: './transaction-list.component.scss',
 })
@@ -20,6 +21,7 @@ export class TransactionListComponent {
   private readonly transactionService = inject(TransactionService);
   private readonly categoryService = inject(CategoryService);
   private readonly accountService = inject(FinancialAccountService);
+  private readonly today = new Date();
 
   protected readonly state = signal({
     transactions: [] as Transaction[],
@@ -36,6 +38,44 @@ export class TransactionListComponent {
   protected readonly accountError = signal('');
   protected readonly deletingIds = signal(new Set<string>());
   protected readonly deleteError = signal('');
+  protected readonly months = [
+    'Janeiro',
+    'Fevereiro',
+    'Março',
+    'Abril',
+    'Maio',
+    'Junho',
+    'Julho',
+    'Agosto',
+    'Setembro',
+    'Outubro',
+    'Novembro',
+    'Dezembro',
+  ];
+  protected readonly selectedMonth = signal<number | null>(this.today.getMonth() + 1);
+  protected readonly selectedYear = signal<number | null>(this.today.getFullYear());
+  protected readonly years = computed(() =>
+    [
+      ...new Set([
+        this.today.getFullYear(),
+        ...this.state().transactions.map((transaction) =>
+          Number(transaction.occurredOn.slice(0, 4)),
+        ),
+      ]),
+    ].sort((a, b) => b - a),
+  );
+  protected readonly visibleTransactions = computed(() => {
+    const month = this.selectedMonth();
+    const year = this.selectedYear();
+    return this.state().transactions.filter(
+      ({ occurredOn }) =>
+        (month === null || occurredOn.slice(5, 7) === String(month).padStart(2, '0')) &&
+        (year === null || occurredOn.slice(0, 4) === String(year)),
+    );
+  });
+  protected readonly hasPeriodFilter = computed(
+    () => this.selectedMonth() !== null || this.selectedYear() !== null,
+  );
 
   constructor() {
     this.accountService

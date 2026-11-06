@@ -2,6 +2,27 @@
   display: block;
 }
 
+.period-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.period-field {
+  display: grid;
+  min-width: 10rem;
+  gap: 0.5rem;
+
+  label {
+    color: #a1a1aa;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+}
+
 .table-card {
   overflow: hidden;
   border: 1px solid #27272a;
@@ -81,7 +102,8 @@ td:last-child {
 }
 
 .category-select,
-.account-select {
+.account-select,
+.period-select {
   min-height: 2.25rem;
   border: 1px solid #3f3f46;
   border-radius: 0.5rem;
@@ -100,6 +122,10 @@ td:last-child {
     cursor: wait;
     opacity: 0.55;
   }
+}
+
+.period-select {
+  width: 100%;
 }
 
 .actions {

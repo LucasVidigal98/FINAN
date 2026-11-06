@@ -14,6 +14,36 @@
 } @else if (state().error) {
   <p role="alert">Não foi possível carregar as transações. Tente recarregar a página.</p>
 } @else {
+  <section class="period-filter" role="group" aria-label="Filtrar transações por período">
+    <div class="period-field">
+      <label for="transaction-month">Mês</label>
+      <select
+        id="transaction-month"
+        class="period-select"
+        [ngModel]="selectedMonth()"
+        (ngModelChange)="selectedMonth.set($event)"
+      >
+        <option [ngValue]="null">Todos</option>
+        @for (month of months; track month; let index = $index) {
+          <option [ngValue]="index + 1">{{ month }}</option>
+        }
+      </select>
+    </div>
+    <div class="period-field">
+      <label for="transaction-year">Ano</label>
+      <select
+        id="transaction-year"
+        class="period-select"
+        [ngModel]="selectedYear()"
+        (ngModelChange)="selectedYear.set($event)"
+      >
+        <option [ngValue]="null">Todos</option>
+        @for (year of years(); track year) {
+          <option [ngValue]="year">{{ year }}</option>
+        }
+      </select>
+    </div>
+  </section>
   <div class="table-card">
     <div class="table-scroll">
       <table aria-label="Lista de transações">
@@ -30,7 +60,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (transaction of state().transactions; track transaction.id) {
+          @for (transaction of visibleTransactions(); track transaction.id) {
             <tr>
               <td>{{ transaction.description }}</td>
               <td>{{ transaction.amount | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</td>
@@ -103,7 +133,13 @@
             </tr>
           } @empty {
             <tr>
-              <td colspan="8">Nenhuma transação cadastrada.</td>
+              <td colspan="8">
+                {{
+                  hasPeriodFilter()
+                    ? 'Nenhuma transação encontrada neste período.'
+                    : 'Nenhuma transação cadastrada.'
+                }}
+              </td>
             </tr>
           }
         </tbody>

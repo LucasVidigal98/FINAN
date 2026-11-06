@@ -1,11 +1,13 @@
 import { registerLocaleData } from '@angular/common';
 import localePt from '@angular/common/locales/pt';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { of, Subject } from 'rxjs';
 import { FinancialAccountService } from '../accounts/financial-account.service';
 import { CategoryResponse } from '../categories/category.model';
 import { CategoryService } from '../categories/category.service';
 import { Transaction } from './transaction';
+import { TransactionFormComponent } from './transaction-form/transaction-form.component';
 import { TransactionListComponent } from './transaction-list.component';
 import { TransactionService } from './transaction.service';
 
@@ -61,6 +63,35 @@ describe('TransactionListComponent', () => {
       deletable: false,
     },
   ];
+  transactions.push(
+    {
+      ...transactions[0],
+      id: '3',
+      description: 'Outubro antigo',
+      occurredOn: '2025-10-01',
+      createdAt: '2025-10-01T12:00:00Z',
+      updatedAt: '2025-10-01T12:00:00Z',
+      deletable: false,
+    },
+    {
+      ...transactions[0],
+      id: '4',
+      description: 'Mercado antigo',
+      occurredOn: '2025-09-15',
+      createdAt: '2025-09-15T12:00:00Z',
+      updatedAt: '2025-09-15T12:00:00Z',
+      deletable: false,
+    },
+    {
+      ...transactions[0],
+      id: '5',
+      description: 'Histórico antigo',
+      occurredOn: '2024-08-15',
+      createdAt: '2024-08-15T12:00:00Z',
+      updatedAt: '2024-08-15T12:00:00Z',
+      deletable: false,
+    },
+  );
   const transactionService = {
     findAll: vi.fn(() => of(transactions)),
     updateCategory: vi.fn(),
@@ -68,6 +99,11 @@ describe('TransactionListComponent', () => {
     delete: vi.fn(),
   };
   const categoryService = { findAll: vi.fn(() => of(categories)) };
+
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 8, 10, 12));
+  });
 
   beforeEach(async () => {
     transactionService.findAll.mockReset().mockReturnValue(of(transactions));
@@ -94,6 +130,132 @@ describe('TransactionListComponent', () => {
     }).compileComponents();
     fixture = TestBed.createComponent(TransactionListComponent);
     fixture.detectChanges();
+  });
+
+  afterEach(() => vi.useRealTimers());
+
+  function selectPeriodOption(id: string, label: string): void {
+    const select = fixture.nativeElement.querySelector(`#${id}`) as HTMLSelectElement;
+    const option = Array.from(select.options).find((item) => item.textContent?.trim() === label);
+    expect(option).toBeDefined();
+    select.value = option!.value;
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+  }
+
+  function visibleDescriptions(): string[] {
+    return Array.from(
+      fixture.nativeElement.querySelectorAll('tbody tr') as NodeListOf<HTMLTableRowElement>,
+    )
+      .map((row) => row.querySelector('td')?.textContent.trim() ?? '')
+      .filter(Boolean);
+  }
+
+  it('defaults to the local current month and year', () => {
+    expect(
+      (fixture.nativeElement.querySelector('#transaction-month') as HTMLSelectElement)
+        .selectedOptions[0].textContent,
+    ).toBe('Setembro');
+    expect(
+      (fixture.nativeElement.querySelector('#transaction-year') as HTMLSelectElement)
+        .selectedOptions[0].textContent,
+    ).toBe('2026');
+    expect(visibleDescriptions()).toEqual(['Mercado', 'Avulsa']);
+  });
+
+  it('filters by another month and year without reloading transactions', () => {
+    selectPeriodOption('transaction-month', 'Outubro');
+    selectPeriodOption('transaction-year', '2025');
+
+    expect(visibleDescriptions()).toEqual(['Outubro antigo']);
+    expect(transactionService.findAll).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows all transactions in their existing order when both filters are Todos', () => {
+    selectPeriodOption('transaction-month', 'Todos');
+    selectPeriodOption('transaction-year', 'Todos');
+
+    expect(visibleDescriptions()).toEqual([
+      'Mercado',
+      'Avulsa',
+      'Outubro antigo',
+      'Mercado antigo',
+      'Histórico antigo',
+    ]);
+  });
+
+  it('filters independently by month or year when the other is Todos', () => {
+    selectPeriodOption('transaction-month', 'Setembro');
+    selectPeriodOption('transaction-year', 'Todos');
+    expect(visibleDescriptions()).toEqual(['Mercado', 'Avulsa', 'Mercado antigo']);
+
+    selectPeriodOption('transaction-month', 'Todos');
+    selectPeriodOption('transaction-year', '2025');
+    expect(visibleDescriptions()).toEqual(['Outubro antigo', 'Mercado antigo']);
+  });
+
+  it('keeps newly created transactions in the full state and applies the active filter', () => {
+    const created: Transaction = {
+      ...transactions[0],
+      id: '6',
+      description: 'Nova transação',
+      occurredOn: '2025-08-02',
+      createdAt: '2025-08-02T12:00:00Z',
+      updatedAt: '2025-08-02T12:00:00Z',
+    };
+    fixture.debugElement
+      .query(By.directive(TransactionFormComponent))
+      .componentInstance.transactionCreated.emit(created);
+    fixture.detectChanges();
+
+    expect(visibleDescriptions()).toEqual(['Mercado', 'Avulsa']);
+    selectPeriodOption('transaction-month', 'Agosto');
+    selectPeriodOption('transaction-year', '2025');
+    expect(visibleDescriptions()).toEqual(['Nova transação']);
+  });
+
+  it('has associated labels and focusable native controls', () => {
+    const month = fixture.nativeElement.querySelector('#transaction-month') as HTMLSelectElement;
+    const year = fixture.nativeElement.querySelector('#transaction-year') as HTMLSelectElement;
+
+    expect(
+      fixture.nativeElement.querySelector('label[for="transaction-month"]')?.textContent.trim(),
+    ).toBe('Mês');
+    expect(
+      fixture.nativeElement.querySelector('label[for="transaction-year"]')?.textContent.trim(),
+    ).toBe('Ano');
+    month.focus();
+    expect(document.activeElement).toBe(month);
+    expect(year.tagName).toBe('SELECT');
+  });
+
+  it('preserves loading and error states and distinguishes empty period from empty history', () => {
+    selectPeriodOption('transaction-month', 'Dezembro');
+    expect(fixture.nativeElement.querySelector('tbody')?.textContent).toContain(
+      'Nenhuma transação encontrada neste período.',
+    );
+
+    fixture.destroy();
+    const request = new Subject<Transaction[]>();
+    transactionService.findAll.mockReturnValue(request);
+    fixture = TestBed.createComponent(TransactionListComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Carregando transações...');
+    request.error(new Error('network'));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain(
+      'Não foi possível carregar as transações.',
+    );
+
+    fixture.destroy();
+    transactionService.findAll.mockReturnValue(of([]));
+    fixture = TestBed.createComponent(TransactionListComponent);
+    fixture.detectChanges();
+    selectPeriodOption('transaction-month', 'Todos');
+    selectPeriodOption('transaction-year', 'Todos');
+    expect(fixture.nativeElement.querySelector('tbody')?.textContent).toContain(
+      'Nenhuma transação cadastrada.',
+    );
   });
 
   it('assigns, switches and removes accounts without reloading, and restores on failure', () => {
