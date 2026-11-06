@@ -5,17 +5,14 @@ import {
   ElementRef,
   inject,
   Injector,
-  isDevMode,
   OnDestroy,
   signal,
   ViewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { PluggyConnect } from 'pluggy-connect-sdk';
-import { OpenFinanceService } from './open-finance.service';
+import { ConnectResult, OpenFinanceService } from './open-finance.service';
 
 type ConnectionState = 'idle' | 'requesting' | 'active' | 'closing';
-type Result = 'success' | 'closed' | 'error';
 
 @Component({
   selector: 'app-open-finance-page',
@@ -28,7 +25,6 @@ export class OpenFinancePageComponent implements OnDestroy {
   private readonly injector = inject(Injector);
   private attemptSequence = 0;
   private activeAttempt: number | null = null;
-  private widget: PluggyConnect | null = null;
   private destroyed = false;
 
   @ViewChild('connectButton') private connectButton?: ElementRef<HTMLButtonElement>;
@@ -49,13 +45,8 @@ export class OpenFinancePageComponent implements OnDestroy {
       .createConnectToken()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (response) => {
+        next: (token) => {
           if (!this.isCurrentAttempt(attempt)) return;
-          const token = response?.connectToken;
-          if (typeof token !== 'string' || token.trim().length === 0) {
-            this.finish(attempt, 'error');
-            return;
-          }
           this.openWidget(attempt, token);
         },
         error: () => this.finish(attempt, 'error'),
@@ -65,42 +56,20 @@ export class OpenFinancePageComponent implements OnDestroy {
   ngOnDestroy(): void {
     this.destroyed = true;
     this.activeAttempt = null;
-    const widget = this.widget;
-    this.widget = null;
-    if (widget) {
-      try {
-        void widget.destroy().then(undefined, () => undefined);
-      } catch {
-        // The route is leaving; remote teardown errors cannot be shown here.
-      }
-    }
+    const cleanup = this.service.destroyConnectWidget();
+    if (cleanup) void cleanup.then(undefined, () => undefined);
   }
 
   private openWidget(attempt: number, token: string): void {
     try {
-      const widget = new PluggyConnect({
-        connectToken: token,
-        includeSandbox: isDevMode(),
-        allowConnectInBackground: false,
-        language: 'pt',
-        theme: 'dark',
-        onSuccess: () => this.finish(attempt, 'success'),
-        onError: () => this.finish(attempt, 'error'),
-        onClose: () => this.finish(attempt, 'closed'),
-      });
-      this.widget = widget;
+      this.service.openConnectWidget(token, (result) => this.finish(attempt, result));
       this.state.set('active');
-      try {
-        void widget.init().then(undefined, () => this.finish(attempt, 'error'));
-      } catch {
-        this.finish(attempt, 'error');
-      }
     } catch {
       this.finish(attempt, 'error');
     }
   }
 
-  private finish(attempt: number, result: Result): void {
+  private finish(attempt: number, result: ConnectResult): void {
     if (!this.isCurrentAttempt(attempt)) return;
     this.activeAttempt = null;
     this.message.set(
@@ -112,9 +81,8 @@ export class OpenFinancePageComponent implements OnDestroy {
     );
     this.messageRole.set(result === 'error' ? 'alert' : 'status');
 
-    const widget = this.widget;
-    this.widget = null;
-    this.state.set(widget ? 'closing' : 'idle');
+    const cleanup = this.service.destroyConnectWidget();
+    this.state.set(cleanup ? 'closing' : 'idle');
     const release = () => {
       if (this.destroyed) return;
       this.state.set('idle');
@@ -125,15 +93,11 @@ export class OpenFinancePageComponent implements OnDestroy {
         { injector: this.injector },
       );
     };
-    if (!widget) {
+    if (!cleanup) {
       release();
       return;
     }
-    try {
-      void widget.destroy().then(release, release);
-    } catch {
-      release();
-    }
+    void cleanup.then(release, release);
   }
 
   private isCurrentAttempt(attempt: number): boolean {

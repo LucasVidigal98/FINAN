@@ -2,13 +2,13 @@ package br.com.finan.category;
 
 import java.util.List;
 
+import br.com.finan.shared.ApplicationException;
+import br.com.finan.shared.ApplicationException.Type;
 import br.com.finan.transaction.TransactionType;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class CategoryService {
@@ -22,13 +22,13 @@ public class CategoryService {
     @Transactional
     public CategoryResponse create(CreateCategoryRequest request) {
         if (repository.existsByNameIgnoreCaseAndType(request.name(), request.type())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Category already exists");
+            throw new ApplicationException(Type.CONFLICT, "Category already exists");
         }
         try {
             return toResponse(repository.saveAndFlush(
                     new Category(request.name(), request.type(), request.color())));
         } catch (DataIntegrityViolationException exception) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Category already exists", exception);
+            throw new ApplicationException(Type.CONFLICT, "Category already exists", exception);
         }
     }
 

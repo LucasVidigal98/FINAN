@@ -26,6 +26,15 @@ describe('OpenFinanceService', () => {
     expect(request.request.body).toBeNull();
     request.flush({ connectToken: 'fake-connect-token' });
 
-    expect(response).toEqual({ connectToken: 'fake-connect-token' });
+    expect(response).toBe('fake-connect-token');
+  });
+
+  it('rejects malformed token responses at the HTTP boundary', () => {
+    let failed = false;
+    service.createConnectToken().subscribe({ error: () => (failed = true) });
+
+    http.expectOne('http://localhost:8080/api/open-finance/connect-token').flush({});
+
+    expect(failed).toBe(true);
   });
 });

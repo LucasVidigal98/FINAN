@@ -1,6 +1,7 @@
 <!-- Gerado por harness/scripts/harness.mjs; edite as fontes em common/ e projects/<path>/. -->
 # Regras gerais do workspace FINAN
 
+O diretório harness/ é o coração do desenvolvimento orientado por IA neste workspace. Suas orientações vivas e skills são parte do trabalho, não documentação opcional: consulte as fontes pertinentes antes de alterar código e atualize-as no mesmo trabalho quando arquitetura, comportamento, configuração, testes ou decisões adotadas evoluírem.
 Um único Git em FINAN/ contém os projetos frontend/ e backend/. Não inicialize Git nas aplicações. Branches, commits e status são compartilhados; confira o diff de ambos.
 Leia também o AGENTS.md da raiz FINAN. Caminhos específicos partem da pasta da aplicação; infraestrutura e documentação compartilhadas ficam um nível acima.
 Consulte e atualize os documentos temáticos afetados pelas mudanças e decisões adotadas. Preserve conteúdo manual válido, diferencie implementação de pendências e nunca registre secrets.

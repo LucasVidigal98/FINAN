@@ -8,14 +8,14 @@ import java.util.UUID;
 
 import br.com.finan.category.Category;
 import br.com.finan.category.CategoryRepository;
+import br.com.finan.shared.ApplicationException;
+import br.com.finan.shared.ApplicationException.Type;
 import br.com.finan.transaction.FinancialTransaction;
 import br.com.finan.transaction.FinancialTransactionRepository;
 import br.com.finan.transaction.TransactionType;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class FixedEntryService {
@@ -51,8 +51,7 @@ public class FixedEntryService {
     @Transactional
     public FixedEntryResponse updateActive(UUID id, UpdateFixedEntryActiveRequest request) {
         FixedEntry fixedEntry = repository.findByIdForUpdate(id)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Fixed entry not found"));
+                .orElseThrow(() -> new ApplicationException(Type.NOT_FOUND, "Fixed entry not found"));
         if (request.active() && !fixedEntry.isActive()) {
             findCategory(fixedEntry.getCategory().getId(), fixedEntry.getType());
             fixedEntry.activate(LocalDate.now(clock));
@@ -65,8 +64,7 @@ public class FixedEntryService {
     @Transactional
     public void delete(UUID id) {
         FixedEntry fixedEntry = repository.findByIdForUpdate(id)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Fixed entry not found"));
+                .orElseThrow(() -> new ApplicationException(Type.NOT_FOUND, "Fixed entry not found"));
         transactionRepository.deleteAllByFixedEntry(fixedEntry);
         transactionRepository.flush();
         repository.delete(fixedEntry);
@@ -100,22 +98,21 @@ public class FixedEntryService {
 
     private Category findCategory(UUID categoryId, TransactionType type) {
         Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Category not found"));
+                .orElseThrow(() -> new ApplicationException(Type.NOT_FOUND, "Category not found"));
         if (!category.isActive()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Category is inactive");
+            throw new ApplicationException(Type.INVALID_REQUEST, "Category is inactive");
         }
         if (category.getType() != type) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Category type does not match fixed entry type");
+            throw new ApplicationException(
+                    Type.INVALID_REQUEST, "Category type does not match fixed entry type");
         }
         return category;
     }
 
     private void rejectInvestment(TransactionType type) {
         if (type == TransactionType.INVESTMENT) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Fixed entries do not support investments");
+            throw new ApplicationException(
+                    Type.INVALID_REQUEST, "Fixed entries do not support investments");
         }
     }
 

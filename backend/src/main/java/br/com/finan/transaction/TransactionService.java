@@ -7,11 +7,11 @@ import br.com.finan.account.FinancialAccount;
 import br.com.finan.account.FinancialAccountRepository;
 import br.com.finan.category.Category;
 import br.com.finan.category.CategoryRepository;
+import br.com.finan.shared.ApplicationException;
+import br.com.finan.shared.ApplicationException.Type;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class TransactionService {
@@ -46,10 +46,9 @@ public class TransactionService {
     @Transactional
     public void delete(UUID transactionId) {
         FinancialTransaction transaction = repository.findById(transactionId)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Transaction not found"));
+                .orElseThrow(() -> new ApplicationException(Type.NOT_FOUND, "Transaction not found"));
         if (transaction.getSource() != TransactionSource.MANUAL || transaction.getFixedEntry() != null) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
+            throw new ApplicationException(Type.CONFLICT,
                     "Only manually created transactions can be deleted");
         }
         repository.delete(transaction);
@@ -59,8 +58,7 @@ public class TransactionService {
     public TransactionResponse updateCategory(UUID transactionId,
             UpdateTransactionCategoryRequest request) {
         FinancialTransaction transaction = repository.findById(transactionId)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Transaction not found"));
+                .orElseThrow(() -> new ApplicationException(Type.NOT_FOUND, "Transaction not found"));
         transaction.setCategory(findCategory(request.categoryId(), transaction.getType()));
         return toResponse(transaction);
     }
@@ -69,8 +67,7 @@ public class TransactionService {
     public TransactionResponse updateAccount(UUID transactionId,
             UpdateTransactionAccountRequest request) {
         FinancialTransaction transaction = repository.findById(transactionId)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Transaction not found"));
+                .orElseThrow(() -> new ApplicationException(Type.NOT_FOUND, "Transaction not found"));
         transaction.setAccount(findAccount(request.accountId()));
         return toResponse(transaction);
     }
@@ -80,10 +77,9 @@ public class TransactionService {
             return null;
         }
         FinancialAccount account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Account not found"));
+                .orElseThrow(() -> new ApplicationException(Type.NOT_FOUND, "Account not found"));
         if (!account.isActive()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Account is inactive");
+            throw new ApplicationException(Type.INVALID_REQUEST, "Account is inactive");
         }
         return account;
     }
@@ -93,14 +89,13 @@ public class TransactionService {
             return null;
         }
         Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Category not found"));
+                .orElseThrow(() -> new ApplicationException(Type.NOT_FOUND, "Category not found"));
         if (!category.isActive()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Category is inactive");
+            throw new ApplicationException(Type.INVALID_REQUEST, "Category is inactive");
         }
         if (category.getType() != transactionType) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Category type does not match transaction type");
+            throw new ApplicationException(
+                    Type.INVALID_REQUEST, "Category type does not match transaction type");
         }
         return category;
     }

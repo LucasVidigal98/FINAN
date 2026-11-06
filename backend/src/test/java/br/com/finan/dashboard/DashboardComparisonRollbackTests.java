@@ -11,6 +11,7 @@ import br.com.finan.category.Category;
 import br.com.finan.category.CategoryRepository;
 import br.com.finan.fixedentry.FixedEntry;
 import br.com.finan.fixedentry.FixedEntryRepository;
+import br.com.finan.shared.ApplicationException;
 import br.com.finan.transaction.FinancialTransactionRepository;
 import br.com.finan.transaction.TransactionType;
 import org.junit.jupiter.api.AfterEach;
@@ -21,7 +22,6 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.web.server.ResponseStatusException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -77,7 +77,7 @@ class DashboardComparisonRollbackTests {
                 .findAllByOccurredOnBetween(previous.atDay(1), previous.atEndOfMonth()).size();
 
         assertThatThrownBy(() -> dashboardService.comparison(current.getYear(), current.getMonthValue()))
-                .isInstanceOf(ResponseStatusException.class)
+                .isInstanceOf(ApplicationException.class)
                 .hasMessageContaining("Category type does not match fixed entry type");
 
         assertThat(transactions.count()).isEqualTo(transactionCountBefore);

@@ -2,13 +2,13 @@ package br.com.finan.account;
 
 import java.util.List;
 
+import br.com.finan.shared.ApplicationException;
+import br.com.finan.shared.ApplicationException.Type;
 import br.com.finan.transaction.TransactionSource;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class FinancialAccountService {
@@ -23,14 +23,14 @@ public class FinancialAccountService {
     public FinancialAccountResponse create(CreateFinancialAccountRequest request) {
         String name = request.name().strip();
         if (repository.existsByNameIgnoreCaseAndSourceAndActiveTrue(name, TransactionSource.MANUAL)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Active manual account already exists");
+            throw new ApplicationException(Type.CONFLICT, "Active manual account already exists");
         }
         try {
             return toResponse(repository.saveAndFlush(
                     new FinancialAccount(name, request.type(), request.initialBalance())));
         } catch (DataIntegrityViolationException exception) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT, "Active manual account already exists", exception);
+            throw new ApplicationException(
+                    Type.CONFLICT, "Active manual account already exists", exception);
         }
     }
 

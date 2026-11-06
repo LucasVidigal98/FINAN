@@ -1,5 +1,9 @@
 # Repository Guidelines
 
+## AI-Guided Development
+
+The `harness/` directory is the heart of AI-guided development in this workspace. Before changing code, consult the relevant living guidance under `harness/projects/<application>/` and the applicable skills under `harness/.agents/skills/`. Update affected Harness documents in the same change when architecture, behavior, configuration, testing, or an adopted decision evolves. Treat generated `AGENTS.md` files as outputs; edit their Harness sources and synchronize them instead.
+
 ## Project Structure & Module Organization
 
 `frontend/` contains the Angular 22 application. Feature code lives under `frontend/src/app/`; transaction models, services, components, templates, and styles stay together in `app/transactions/`. Static files belong in `frontend/public/`.

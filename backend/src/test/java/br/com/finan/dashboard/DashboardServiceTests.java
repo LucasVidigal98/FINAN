@@ -11,6 +11,7 @@ import java.util.stream.Stream;
 import br.com.finan.category.Category;
 import br.com.finan.fixedentry.FixedEntry;
 import br.com.finan.fixedentry.FixedEntryService;
+import br.com.finan.shared.ApplicationException;
 import br.com.finan.transaction.FinancialTransaction;
 import br.com.finan.transaction.FinancialTransactionRepository;
 import br.com.finan.transaction.TransactionType;
@@ -20,7 +21,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.springframework.web.server.ResponseStatusException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -139,8 +139,8 @@ class DashboardServiceTests {
     @Test
     void rejectsJanuaryOfYearOneBeforeMaterializingEitherPeriod() {
         assertThatThrownBy(() -> service.comparison(1, 1))
-                .isInstanceOf(ResponseStatusException.class)
-                .hasMessageContaining("400 BAD_REQUEST");
+                .isInstanceOf(ApplicationException.class)
+                .hasMessage("Invalid year or month");
 
         verifyNoInteractions(repository, fixedEntryService);
     }
@@ -171,8 +171,8 @@ class DashboardServiceTests {
     @Test
     void rejectsIntervalsBeforeYearOneBeforeMaterializingAnyMonth() {
         assertThatThrownBy(() -> service.evolution(1, 5))
-                .isInstanceOf(ResponseStatusException.class)
-                .hasMessageContaining("400 BAD_REQUEST");
+                .isInstanceOf(ApplicationException.class)
+                .hasMessage("Invalid year or month");
 
         verifyNoInteractions(repository, fixedEntryService);
     }
@@ -217,8 +217,8 @@ class DashboardServiceTests {
     @CsvSource({"0,9", "10000,9", "2026,0", "2026,13"})
     void rejectsInvalidExpenseDistributionPeriodBeforeMaterializing(int year, int month) {
         assertThatThrownBy(() -> service.expenseDistribution(year, month))
-                .isInstanceOf(ResponseStatusException.class)
-                .hasMessageContaining("400 BAD_REQUEST");
+                .isInstanceOf(ApplicationException.class)
+                .hasMessage("Invalid year or month");
 
         verifyNoInteractions(repository, fixedEntryService);
     }
@@ -266,8 +266,8 @@ class DashboardServiceTests {
     @CsvSource({"0,9", "10000,9", "2026,0", "2026,13"})
     void rejectsInvalidLargestExpensesPeriodBeforeMaterializing(int year, int month) {
         assertThatThrownBy(() -> service.largestExpenses(year, month))
-                .isInstanceOf(ResponseStatusException.class)
-                .hasMessageContaining("400 BAD_REQUEST");
+                .isInstanceOf(ApplicationException.class)
+                .hasMessage("Invalid year or month");
         verifyNoInteractions(repository, fixedEntryService);
     }
 
